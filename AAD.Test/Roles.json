@@ -1,0 +1,30 @@
+[{
+    "allowedMemberTypes": [
+      "User",
+      "Application"
+    ],
+    "description": "Read items",
+    "displayName": "Reader",
+    "isEnabled": "true",
+    "value": "items/r"
+},
+{
+    "allowedMemberTypes": [
+      "User",
+      "Application"
+    ],
+    "description": "Write items",
+    "displayName": "Writer",
+    "isEnabled": "true",
+    "value": "items/w"
+},
+{
+    "allowedMemberTypes": [
+      "User",
+      "Application"
+    ],
+    "description": "All access",
+    "displayName": "Admin",
+    "isEnabled": "true",
+    "value": "*/*"
+}]

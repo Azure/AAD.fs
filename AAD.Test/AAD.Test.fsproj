@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <UserSecretsId>79a3edd0-2092-40a2-a04d-dcb46d5ca9ed</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="OpenIdConnectMetadata.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="JsonWebKeySet.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Compile Include="Settings.fs" />
+    <Compile Include="Logging.fs" />
+    <Compile Include="TestsCommon.fs" />
+    <Compile Include="DomainTests.fs" />
+    <Compile Include="ResourceProxy.fs" />
+    <Compile Include="ResourceServers.fs" />
+    <Compile Include="ResourceOwnerTests.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.1.0" />
+    <PackageReference Include="Serilog.Sinks.XUnit" Version="1.0.6" />
+    <PackageReference Include="Suave" Version="2.5.4" />
+    <PackageReference Include="unquote" Version="4.0.0" />
+    <PackageReference Include="xunit" Version="2.4.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.6.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="5.*" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="5.*" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="2.1.1" />
+    <ProjectReference Include="..\AAD.fs\AAD.fs.fsproj" />
+    <ProjectReference Include="..\AAD.Suave\AAD.Suave.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.6.2" />
+  </ItemGroup>
+</Project>

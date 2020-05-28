@@ -1,0 +1,7 @@
+* text=auto
+*.yml text eol=lf
+*.yaml text eol=lf
+*.wsd text eol=lf
+*.fs text eol=lf
+*.fsx text eol=lf
+*.sh text eol=lf

@@ -1,0 +1,32 @@
+pool:
+    vmImage: 'ubuntu-16.04'
+variables:
+    BUILD_NUMBER: $[counter('buildCounter',1)]
+    NUGET_REPO_URL: https://api.nuget.org/v3/index.json
+trigger:
+    branches:
+        include:
+        - master
+        - refs/tags/*
+steps:
+    - task: UseDotNet@2
+      inputs:
+        version: '3.1.x'
+
+    - task: DotNetCoreCLI@2
+      displayName: "Restore tools"
+      inputs:
+        command: custom
+        custom: tool
+        arguments: restore
+        
+    - task: DotNetCoreCLI@2
+      displayName: "Build and publish"
+      inputs:
+        command: custom
+        custom: fake
+        ${{ if startsWith(variables['Build.SourceBranch'], 'refs/tags') }}:
+            arguments: 'build -t publish'
+        ${{ if not(startsWith(variables['Build.SourceBranch'], 'refs/tags')) }}:
+            arguments: build
+            
