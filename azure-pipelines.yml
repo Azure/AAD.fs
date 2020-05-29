@@ -3,6 +3,7 @@ pool:
 variables:
     BUILD_NUMBER: $[counter('buildCounter',1)]
     NUGET_REPO_URL: https://api.nuget.org/v3/index.json
+    
 trigger:
     branches:
         include:
@@ -22,6 +23,8 @@ steps:
         
     - task: DotNetCoreCLI@2
       displayName: "Build and publish"
+      env:
+        NUGET_REPO_KEY: $(NUGET_REPO_KEY)
       inputs:
         command: custom
         custom: fake
