@@ -13,3 +13,4 @@ packages/
 .fake
 symbolCache.db*
 *.user
+Directory.Build.props

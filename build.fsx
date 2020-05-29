@@ -185,6 +185,20 @@ Target.create "publish" (fun _ ->
         if (not result.OK) then failwithf "%A" result.Errors)
 )
 
+Target.create "meta" (fun _ ->
+    [ "<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">"
+      "<PropertyGroup>"
+      "<PackageProjectUrl>https://github.com/Azure/AAD.fs</PackageProjectUrl>"
+      "<PackageLicense>MIT</PackageLicense>"
+      "<RepositoryUrl>https://github.com/Azure/AAD.fs.git</RepositoryUrl>"
+      sprintf "<PackageReleaseNotes>%s</PackageReleaseNotes>" (List.head release.Notes)
+      "<PackageTags>suave;giraffe;fsharp</PackageTags>"
+      sprintf "<Version>%s</Version>" (string ver)
+      "</PropertyGroup>"
+      "</Project>"]
+    |> File.write false "Directory.Build.props"
+)
+
 Target.create "release" ignore
 
 "clean"
@@ -198,6 +212,6 @@ Target.create "release" ignore
  <== [ "test" ]
 
 "release"
- <== [ "publish" ]
+ <== [ "meta"; "publish" ]
 
 Target.runOrDefault "test"
