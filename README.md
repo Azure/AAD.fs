@@ -1,5 +1,7 @@
 ## Azure AD API protection based on OIDC protocols
 
+[![Build Status](https://dev.azure.com/azure-fsharp-libs/public/_apis/build/status/Azure.AAD.fs?branchName=master)](https://dev.azure.com/azure-fsharp-libs/public/_build/latest?definitionId=1&branchName=master)
+[![NuGet](https://img.shields.io/nuget/v/AAD.fs.svg?style=flat)](https://www.nuget.org/packages/AAD.fs/)
 
 #### Consuming the library
 
