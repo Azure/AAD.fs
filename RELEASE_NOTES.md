@@ -1,3 +1,7 @@
+### 1.2.0
+
+* OSS release
+
 ### 1.1.0
 
 * Pass invalid token along into error handler if present
