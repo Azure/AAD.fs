@@ -12,6 +12,7 @@ type PartProtector =
     abstract Verify: getDemand: (HttpContext -> Async<Demand>) -> 
                      onSuccess: (JwtSecurityToken -> WebPart) ->
                      WebPart
+    /// Handling both success and error outcomes
     abstract VerifyWith: getDemand: (HttpContext -> Async<Demand>) -> 
                          onSuccess: (JwtSecurityToken -> WebPart) ->
                          onError: (JwtSecurityToken option -> WWWAuthenticate -> WebPart) ->
@@ -77,7 +78,8 @@ module PartProtector =
                         return! result ctx
                     }
         }
-        
+
+    /// Default constructor with roles, appRoles and scopes filter and `/` separator
     let mkDefault (httpClient: HttpClient)
                   (audiences: #seq<Audience>)
                   (authority: System.Uri) =

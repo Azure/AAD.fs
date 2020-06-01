@@ -11,6 +11,7 @@ obj/
 packages/
 
 .fake
-symbolCache.db*
+docs/output/
+temp/
 *.user
 Directory.Build.props

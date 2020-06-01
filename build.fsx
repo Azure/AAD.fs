@@ -1,9 +1,13 @@
 #r "paket:
-nuget FSharp.Core ~> 4.6.0
+storage: packages
 nuget Fake.DotNet.Cli
 nuget Fake.IO.FileSystem
 nuget Fake.Core.ReleaseNotes
-nuget Fake.Core.Target //"
+nuget Fake.Core.Target
+nuget Fake.Tools.Git
+nuget FSharp.Formatting
+nuget FSharp.Formatting.CommandTool
+nuget Fake.DotNet.FSFormatting //"
 #load "./.fake/build.fsx/intellisense.fsx"
 #if !FAKE
   #r "Facades/netstandard"
@@ -14,8 +18,15 @@ open Fake.Core.TargetOperators
 open Fake.DotNet
 open Fake.IO
 open Fake.IO.Globbing.Operators
+open Fake.Tools
 open System
 open System.Text.RegularExpressions
+
+let gitName = "AAD.fs"
+let gitOwner = "Azure"
+let gitHome = sprintf "https://github.com/%s" gitOwner
+let gitRepo = sprintf "git@github.com:%s/%s.git" gitOwner gitName
+
 let release = ReleaseNotes.load "RELEASE_NOTES.md"
 let ver =
     match Environment.environVarOrNone "BUILD_NUMBER" with
@@ -81,6 +92,7 @@ let packages =
 Target.create "clean" (fun _ ->
     !! "./**/bin"
     ++ "./**/obj"
+    ++ "./docs/output"
     |> Seq.iter Shell.cleanDir
 )
 
@@ -90,7 +102,7 @@ Target.create "restore" (fun _ ->
 
 Target.create "build" (fun _ ->
     let args = sprintf "/p:Version=%s --no-restore" ver.AsString
-    DotNet.build (fun a -> a.WithCommon (fun c -> { c with CustomParams = Some args})) "."
+    DotNet.publish (fun a -> a.WithCommon (fun c -> { c with CustomParams = Some args})) "."
 )
 
 Target.create "test" (fun _ ->
@@ -103,12 +115,13 @@ Target.create "registerSample" (fun _ ->
         parsePlain >> String.split '\n' >> List.filter String.isNotNullOrEmpty >> function
         | [l1;l2] -> l1, mapOfTsv l2 
         | x -> failwithf "Unexpected output:%A" x
-    let parseClient =
+    let parseTuple =
         parsePlain >> String.split '\n' >> List.filter String.isNotNullOrEmpty >> function
         | [l1;l2] -> l1, l2 
         | x -> failwithf "Unexpected output:%A" x
 
     let tenantId = az "account show --query tenantId --output tsv" "." parsePlain
+    let tenantName = az "rest --uri \"https://graph.microsoft.com/v1.0/organization\" --query \"value[].verifiedDomains[?isDefault] | [0][0].name\" --output tsv" "." parsePlain
     let rnd = Random().Next(1,1000)
     let appName = sprintf "aad-fs-sample%d" rnd
     printfn "Registring: %s" appName
@@ -130,15 +143,12 @@ Target.create "registerSample" (fun _ ->
           sprintf "http://aad-sample-admin%d" rnd ]
         |> List.map (fun n ->
             aza (sprintf "ad sp create-for-rbac -n \"%s\" --query password --output tsv" n) "." parsePlain
-            |> Async.tuple (aza (sprintf "ad sp show --id \"%s\" --query \"[objectId,appId]\" --output tsv" n) "." parseClient))
+            |> Async.tuple (aza (sprintf "ad sp show --id \"%s\" --query \"[objectId,appId]\" --output tsv" n) "." parseTuple))
         |> Async.Parallel
         |> Async.RunSynchronously
         |> function [|r1; r2; r3|] -> r1, r2, r3 | _ -> failwith "Arity mismatch"
-    // role assignment
-    Graph.assign (roles |> Map.find "Reader") readerId appSPId tenantId 
-    Graph.assign (roles |> Map.find "Writer") writerId appSPId tenantId
-    Graph.assign (roles |> Map.find "Admin") adminId appSPId tenantId
-
+    
+    // save the info in the dotnet secrets
     Secret.set "AppId" appId
     Secret.set "ReaderAppId" readerAppId
     Secret.set "ReaderSecret" readerPwd
@@ -147,6 +157,11 @@ Target.create "registerSample" (fun _ ->
     Secret.set "AdminAppId" adminAppId
     Secret.set "AdminSecret" adminPwd
     Secret.set "TenantId" tenantId
+
+    // role assignment
+    Graph.assign (roles |> Map.find "Reader") readerId appSPId tenantName 
+    Graph.assign (roles |> Map.find "Writer") writerId appSPId tenantName
+    Graph.assign (roles |> Map.find "Admin") adminId appSPId tenantName
 )
 
 Target.create "unregisterSample" (fun _ ->
@@ -188,15 +203,68 @@ Target.create "publish" (fun _ ->
 Target.create "meta" (fun _ ->
     [ "<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">"
       "<PropertyGroup>"
-      "<PackageProjectUrl>https://github.com/Azure/AAD.fs</PackageProjectUrl>"
+      sprintf "<PackageProjectUrl>%s/%s</PackageProjectUrl>" gitHome gitName
       "<PackageLicense>MIT</PackageLicense>"
-      "<RepositoryUrl>https://github.com/Azure/AAD.fs.git</RepositoryUrl>"
+      sprintf "<RepositoryUrl>%s</RepositoryUrl>" gitRepo
       sprintf "<PackageReleaseNotes>%s</PackageReleaseNotes>" (List.head release.Notes)
+      "<PackageIconUrl>https://raw.githubusercontent.com/Azure/AAD.fs/master/docs/files/img/logo.png</PackageIconUrl>"
       "<PackageTags>suave;giraffe;fsharp</PackageTags>"
       sprintf "<Version>%s</Version>" (string ver)
       "</PropertyGroup>"
       "</Project>"]
     |> File.write false "Directory.Build.props"
+)
+
+
+// --------------------------------------------------------------------------------------
+// Generate the documentation
+let docs_out = "docs/output"
+let docsHome = "https://azure.github.io/AAD.fs"
+
+let generateDocs _ =
+    let info =
+      [ "project-name", "AAD.fs"
+        "project-author", "Azure Dedicated"
+        "project-summary", "Azure AD authorization for F# web APIs"
+        "project-github", sprintf "%s/%s" gitHome gitName
+        "project-nuget", "http://nuget.org/packages/AAD.fs" ]
+
+    FSFormatting.createDocs (fun args ->
+            { args with
+                Source = "docs/content"
+                OutputDirectory = docs_out
+                LayoutRoots = [ "docs/tools/templates"
+                                ".fake/build.fsx/packages/fsharp.formatting/templates" ]
+                ProjectParameters  = ("root", docsHome)::info
+                Template = "docpage.cshtml" } )
+    !!"**/*"
+    |> GlobbingPattern.setBaseDir "docs/files"
+    |> Shell.copyFilesWithSubFolder "docs/output"
+    !!"**/*"
+    |> GlobbingPattern.setBaseDir ".fake/build.fsx/packages/FSharp.Formatting/styles"
+    |> Shell.copyFilesWithSubFolder "docs/output"
+
+Target.create "generateDocs" generateDocs
+
+Target.create "watchDocs" (fun _ ->
+    use watcher =
+        (!! "docs/content/**/*.*")
+        |> ChangeWatcher.run generateDocs
+
+    Trace.traceImportant "Waiting for help edits. Press any key to stop."
+    System.Console.ReadKey() |> ignore
+    watcher.Dispose()
+)
+
+Target.create "releaseDocs" (fun _ ->
+    let tempDocsDir = "temp/gh-pages"
+    Shell.cleanDir tempDocsDir
+    Git.Repository.cloneSingleBranch "" gitRepo "gh-pages" tempDocsDir
+
+    Shell.copyRecursive docs_out tempDocsDir true |> Trace.tracefn "%A"
+    Git.Staging.stageAll tempDocsDir
+    Git.Commit.exec tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
+    Git.Branches.push tempDocsDir
 )
 
 Target.create "release" ignore
@@ -205,8 +273,12 @@ Target.create "release" ignore
   ==> "restore"
   ==> "build"
   ==> "test"
+  ==> "generateDocs"
   ==> "package"
   ==> "publish"
+
+"releaseDocs"
+  <== ["test"; "generateDocs" ]
 
 "integration"
  <== [ "test" ]
