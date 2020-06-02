@@ -21,7 +21,7 @@ It can be an AD Role (`role` claim), an AD Application role (`roles` claim) or a
 1. When building the application routes construct a `PartProtector`
 1. By default well-known URI of the AD authority will be contacted
 1. Retrieved the signing keys will be used later to verify tokens
-1. Requsting party requests a token, for example using assigned [application roles](https://docs.microsoft.com/en-us/azure/architecture/multitenant-identity/app-roles)
+1. Requesting party requests a token, for example using assigned [application roles](https://docs.microsoft.com/en-us/azure/architecture/multitenant-identity/app-roles)
 1. Pass the resulting token along with the http request in `Authorization` header
 1. Pass the call to `PartProtector.Verify` - a `WebPart` that implements the validation
 1. `PartProtector` asks for demands given the context of the request

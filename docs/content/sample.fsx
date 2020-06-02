@@ -98,7 +98,7 @@ And as mentioned above, `Admin` with its `*/*` value will meet both of those dem
 (** Requesting the token
 ---------
 On the Requesting Party side, we need to tell the AD that we need the appRoles assigned to our principals mapped to the token claims.
-We do that by specifying our `Application URI` as a scope, in case of the registerd sample it will look something like: `api://{clientid}/.default`, where the `/.default` suffix is a special identifier that tells AD to figure which role(s) the user has in the application instead of requsting one specific role. 
+We do that by specifying our `Application URI` as a scope, in case of the registerd sample it will look something like: `api://{clientid}/.default`, where the `/.default` suffix is a special identifier that tells AD to figure which role(s) the user has in the application instead of requesting one specific role. 
 The samples use [MSAL](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet) to obtain and refresh the token as needed.
 *)
 
