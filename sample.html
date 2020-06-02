@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>sample</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="Azure AD authorization for F# web APIs"/>
+    <meta name="author" content="Azure Dedicated"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="https://azure.github.io/AAD.fs/content/style_light.css" />
+    <script type="text/javascript" src="https://azure.github.io/AAD.fs/content/tips.js"></script>
+    <style>span.l { display: none }</style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+        </ul>
+        <h3 class="muted"><a href="https://azure.github.io/AAD.fs/index.html">AAD.fs</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          <h2><a name="The-sample" class="anchor" href="#The-sample">The sample</a></h2>
+<p>The example implements authorization using <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-add-app-roles-in-azure-ad-apps">Azure Application Roles</a>. The sample application can be found in your Azure Active Directory once provisioned:</p>
+<ul>
+<li><code>dotnet fake build -t registerSample</code></li>
+</ul>
+<p>For simplicity, the sample uses service principals as identities for the Requesting Party. The registration creates following items in the AD:</p>
+<ul>
+<li><code>aad-sample-admin</code> service principal (Requesting Party)</li>
+<li><code>aad-sample-reader</code> service principal (Requesting Party)</li>
+<li><code>aad-sample-writer</code> service principal (Requesting Party)</li>
+<li><code>aad-fs-sample</code> application (Resource Server) and corresponging Enterprise Application to manage application role assignments</li>
+</ul>
+<blockquote>
+<p>Note: All the identitifiers will have a random suffix added.</p>
+</blockquote>
+<p><code>aad-sample</code> will have following AppRoles defined:</p>
+<ul>
+<li><code>Admin</code> with <code>*/*</code> value</li>
+<li><code>Reader</code> with <code>items/r</code> value</li>
+<li><code>Writer</code> with <code>items/w</code> value</li>
+</ul>
+<p>Once provisioned you can find these roles in the application's manifest, it will look something like this:
+<img src="img/manifest_roles.png" alt="appRoles" /></p>
+<p>Requesting Party service principals will have the corresponding roles assigned, which you can check in the Enterprise Application's <code>Users and Groups</code> blade:
+<img src="img/assignments.png" alt="assignments" /></p>
+<h2><a name="Authoring-the-roles" class="anchor" href="#Authoring-the-roles">Authoring the roles</a></h2>
+<p>The role values can be anything you need. The example here demonstrates the capability of the library to deal with patterns and wildcards:</p>
+<p>A "pattern" means that we can expect a structure in the value, like "items/r" or "items.r" - <code>/</code> is the default separator, but the character is configurable - use <code>PartProtector.mkNew</code> instead of <code>mkDefault</code> if you need to change it.
+Use <code>*</code> wildcard in any segment of the role value to make any demand match that part of the pattern, for example <code>items/*</code> in the role value will match the demands like <code>items/r</code>, <code>items/w</code>, etc.
+<code>*/*</code> means that the identity with that claim in the token will have access to APIs that demand <code>items</code>, <code>fiddles/play</code>, <code>cats/herd</code>, etc with or w/o any 2nd (verb) segment.</p>
+<p>Complex demands can be expressed by combining the patterns with <code>Any</code> and <code>All</code>, for example:</p>
+<ul>
+<li><code>All [Pattern ["A";"1"]; Pattern ["B";"2"]]</code> will only match if both <code>A/1</code> and <code>B/2</code> are present among the token claims.</li>
+</ul>
+<h2><a name="Implementing-Resource-Server" class="anchor" href="#Implementing-Resource-Server">Implementing Resource Server</a></h2>
+<p>The full source code for this sample is in <code>AAD.tasks.Test/ResourceServers.fs</code>, but here are the important ingredients:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs14', 14)" onmouseover="showTip(event, 'fs14', 14)" class="k">task</span> <span class="pn">{</span>
+    <span class="k">let!</span> <span onmouseout="hideTip(event, 'fs15', 15)" onmouseover="showTip(event, 'fs15', 15)" class="id">protector</span> <span class="o">=</span> 
+        <span onmouseout="hideTip(event, 'fs16', 16)" onmouseover="showTip(event, 'fs16', 16)" class="m">PartProtector</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 17)" onmouseover="showTip(event, 'fs17', 17)" class="id">mkDefault</span> <span onmouseout="hideTip(event, 'fs7', 18)" onmouseover="showTip(event, 'fs7', 18)" class="id">httpClient</span> <span onmouseout="hideTip(event, 'fs11', 19)" onmouseover="showTip(event, 'fs11', 19)" class="id">audience</span> <span onmouseout="hideTip(event, 'fs12', 20)" onmouseover="showTip(event, 'fs12', 20)" class="id">authority</span>
+        
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs18', 21)" onmouseover="showTip(event, 'fs18', 21)" class="id">read</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs19', 22)" onmouseover="showTip(event, 'fs19', 22)" class="rt">HttpHandler</span> <span class="o">=</span>
+        <span onmouseout="hideTip(event, 'fs15', 23)" onmouseover="showTip(event, 'fs15', 23)" class="id">protector</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 24)" onmouseover="showTip(event, 'fs17', 24)" class="id">Verify</span> <span class="pn">(</span><span class="k">fun</span> <span class="id">ctx</span> <span class="k">-&gt;</span> <span class="id">Task</span><span class="pn">.</span><span class="id">FromResult</span> <span class="o">&lt;|</span> <span class="id">Pattern</span> <span class="pn">[</span><span class="s">&quot;items&quot;</span><span class="pn">;</span> <span class="s">&quot;r&quot;</span><span class="pn">]</span><span class="pn">)</span>
+                         <span class="pn">(</span><span class="k">fun</span> <span class="id">token</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs20', 25)" onmouseover="showTip(event, 'fs20', 25)" class="id">text</span> <span class="s">&quot;Read!&quot;</span><span class="pn">)</span>
+
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs21', 26)" onmouseover="showTip(event, 'fs21', 26)" class="id">write</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs19', 27)" onmouseover="showTip(event, 'fs19', 27)" class="rt">HttpHandler</span> <span class="o">=</span>
+        <span onmouseout="hideTip(event, 'fs15', 28)" onmouseover="showTip(event, 'fs15', 28)" class="id">protector</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 29)" onmouseover="showTip(event, 'fs17', 29)" class="id">Verify</span> <span class="pn">(</span><span class="k">fun</span> <span class="id">ctx</span> <span class="k">-&gt;</span> <span class="id">Task</span><span class="pn">.</span><span class="id">FromResult</span> <span class="o">&lt;|</span> <span class="id">Pattern</span> <span class="pn">[</span><span class="s">&quot;items&quot;</span><span class="pn">;</span> <span class="s">&quot;w&quot;</span><span class="pn">]</span><span class="pn">)</span>
+                         <span class="pn">(</span><span class="k">fun</span> <span class="id">token</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs20', 30)" onmouseover="showTip(event, 'fs20', 30)" class="id">text</span> <span class="s">&quot;Written!&quot;</span><span class="pn">)</span>
+        
+    <span class="k">return</span> 
+        <span onmouseout="hideTip(event, 'fs22', 31)" onmouseover="showTip(event, 'fs22', 31)" class="fn">choose</span> <span class="pn">[</span>
+          <span onmouseout="hideTip(event, 'fs23', 32)" onmouseover="showTip(event, 'fs23', 32)" class="id">HEAD</span> <span class="pn">&gt;</span><span class="o">=&gt;</span> <span onmouseout="hideTip(event, 'fs17', 33)" onmouseover="showTip(event, 'fs17', 33)" class="id">route</span> <span class="s">&quot;/&quot;</span> <span class="pn">&gt;</span><span class="o">=&gt;</span> <span onmouseout="hideTip(event, 'fs24', 34)" onmouseover="showTip(event, 'fs24', 34)" class="id">Successful</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs25', 35)" onmouseover="showTip(event, 'fs25', 35)" class="id">NO_CONTENT</span>
+          <span onmouseout="hideTip(event, 'fs26', 36)" onmouseover="showTip(event, 'fs26', 36)" class="id">GET</span> <span class="pn">&gt;</span><span class="o">=&gt;</span> <span onmouseout="hideTip(event, 'fs17', 37)" onmouseover="showTip(event, 'fs17', 37)" class="id">route</span> <span class="s">&quot;/&quot;</span> <span class="pn">&gt;</span><span class="o">=&gt;</span> <span onmouseout="hideTip(event, 'fs18', 38)" onmouseover="showTip(event, 'fs18', 38)" class="id">read</span>
+          <span onmouseout="hideTip(event, 'fs27', 39)" onmouseover="showTip(event, 'fs27', 39)" class="id">PUT</span> <span class="pn">&gt;</span><span class="o">=&gt;</span> <span onmouseout="hideTip(event, 'fs17', 40)" onmouseover="showTip(event, 'fs17', 40)" class="id">route</span> <span class="s">&quot;/&quot;</span> <span class="pn">&gt;</span><span class="o">=&gt;</span> <span onmouseout="hideTip(event, 'fs21', 41)" onmouseover="showTip(event, 'fs21', 41)" class="id">write</span>
+          <span onmouseout="hideTip(event, 'fs28', 42)" onmouseover="showTip(event, 'fs28', 42)" class="id">RequestErrors</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 43)" onmouseover="showTip(event, 'fs17', 43)" class="id">NOT_FOUND</span> <span class="s">&quot;&quot;</span>
+        <span class="pn">]</span>
+<span class="pn">}</span>
+</code></pre></td>
+</tr>
+</table>
+<p>As you can see:</p>
+<ul>
+<li>all the tokens that <code>protector</code> handles are issued for a specific <code>audience</code> - our <code>aad-fs-sample</code></li>
+<li>the functions that return the demands for a given handler are asynchronous to facilitate potential IO based on the context of the request.</li>
+<li><code>read</code> HttpHandler demands access with a token that has a claim in one of [<code>role</code>, <code>roles</code> or <code>scp</code>] that matches the pattern "items/r"</li>
+<li><code>write</code> HttpHandler demands access with a token that has a claim that matches the pattern "items/w"</li>
+</ul>
+<p>And as mentioned above, <code>Admin</code> with its <code>*/*</code> value will meet both of those demands.</p>
+<h2><a name="Requesting-the-token" class="anchor" href="#Requesting-the-token">Requesting the token</a></h2>
+<p>On the Requesting Party side, we need to tell the AD that we need the appRoles assigned to our principals mapped to the token claims.
+We do that by specifying our <code>Application URI</code> as a scope, in case of the registerd sample it will look something like: <code>api://{clientid}/.default</code>, where the <code>/.default</code> suffix is a special identifier that tells AD to figure which role(s) the user has in the application instead of requsting one specific role.
+The samples use <a href="https://github.com/AzureAD/microsoft-authentication-library-for-dotnet">MSAL</a> to obtain and refresh the token as needed.</p>
+<h2><a name="Passing-the-token-with-a-call" class="anchor" href="#Passing-the-token-with-a-call">Passing the token with a call</a></h2>
+<p>Considering that the token is refreshed periodically, <code>AsyncRequestor</code> or <code>TaskRequestor</code> can be useful to ensure a token is obtained and associated it with each request.</p>
+
+<div class="tip" id="fs1">namespace System</div>
+<div class="tip" id="fs2">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
+<div class="tip" id="fs3">Multiple items<br />namespace FSharp.Control<br /><br />--------------------<br />namespace Microsoft.FSharp.Control</div>
+<div class="tip" id="fs4">namespace FSharp.Control.Tasks</div>
+<div class="tip" id="fs5">namespace Giraffe</div>
+<div class="tip" id="fs6">namespace AAD</div>
+<div class="tip" id="fs7">val httpClient : Net.Http.HttpClient</div>
+<div class="tip" id="fs8">namespace System.Net</div>
+<div class="tip" id="fs9">namespace System.Net.Http</div>
+<div class="tip" id="fs10">Multiple items<br />type HttpClient =<br />&#160;&#160;inherit HttpMessageInvoker<br />&#160;&#160;new : unit -&gt; HttpClient + 2 overloads<br />&#160;&#160;member BaseAddress : Uri with get, set<br />&#160;&#160;member CancelPendingRequests : unit -&gt; unit<br />&#160;&#160;member DefaultRequestHeaders : HttpRequestHeaders<br />&#160;&#160;member DefaultRequestVersion : Version with get, set<br />&#160;&#160;member DeleteAsync : requestUri:string -&gt; Task&lt;HttpResponseMessage&gt; + 3 overloads<br />&#160;&#160;member GetAsync : requestUri:string -&gt; Task&lt;HttpResponseMessage&gt; + 7 overloads<br />&#160;&#160;member GetByteArrayAsync : requestUri:string -&gt; Task&lt;byte[]&gt; + 1 overload<br />&#160;&#160;member GetStreamAsync : requestUri:string -&gt; Task&lt;Stream&gt; + 1 overload<br />&#160;&#160;member GetStringAsync : requestUri:string -&gt; Task&lt;string&gt; + 1 overload<br />&#160;&#160;...<br /><br />--------------------<br />Net.Http.HttpClient() : Net.Http.HttpClient<br />Net.Http.HttpClient(handler: Net.Http.HttpMessageHandler) : Net.Http.HttpClient<br />Net.Http.HttpClient(handler: Net.Http.HttpMessageHandler, disposeHandler: bool) : Net.Http.HttpClient</div>
+<div class="tip" id="fs11">val audience : string list</div>
+<div class="tip" id="fs12">val authority : Uri</div>
+<div class="tip" id="fs13">Multiple items<br />type Uri =<br />&#160;&#160;new : uriString:string -&gt; Uri + 5 overloads<br />&#160;&#160;member AbsolutePath : string<br />&#160;&#160;member AbsoluteUri : string<br />&#160;&#160;member Authority : string<br />&#160;&#160;member DnsSafeHost : string<br />&#160;&#160;member Equals : comparand:obj -&gt; bool<br />&#160;&#160;member Fragment : string<br />&#160;&#160;member GetComponents : components:UriComponents * format:UriFormat -&gt; string<br />&#160;&#160;member GetHashCode : unit -&gt; int<br />&#160;&#160;member GetLeftPart : part:UriPartial -&gt; string<br />&#160;&#160;...<br /><br />--------------------<br />Uri(uriString: string) : Uri<br />Uri(uriString: string, uriKind: UriKind) : Uri<br />Uri(baseUri: Uri, relativeUri: string) : Uri<br />Uri(baseUri: Uri, relativeUri: Uri) : Uri</div>
+<div class="tip" id="fs14">val task : TaskBuilder.TaskBuilder</div>
+<div class="tip" id="fs15">val protector : obj</div>
+<div class="tip" id="fs16">Multiple items<br />module PartProtector<br /><br />from AAD<br /><br />--------------------</div>
+<div class="tip" id="fs17"></div>
+<div class="tip" id="fs18">val read : obj</div>
+<div class="tip" id="fs19">type HttpHandler = HttpFunc -&gt; HttpFunc</div>
+<div class="tip" id="fs20">val text : str:string -&gt; HttpHandler</div>
+<div class="tip" id="fs21">val write : obj</div>
+<div class="tip" id="fs22">val choose : handlers:HttpHandler list -&gt; next:HttpFunc -&gt; HttpFunc</div>
+<div class="tip" id="fs23">val HEAD : HttpHandler</div>
+<div class="tip" id="fs24">module Successful<br /><br />from Giraffe.HttpStatusCodeHandlers</div>
+<div class="tip" id="fs25">val NO_CONTENT : HttpHandler</div>
+<div class="tip" id="fs26">val GET : HttpHandler</div>
+<div class="tip" id="fs27">val PUT : HttpHandler</div>
+<div class="tip" id="fs28">module RequestErrors<br /><br />from Giraffe.HttpStatusCodeHandlers</div>
+
+        </div>
+        <div class="span3">
+          <img src="https://azure.github.io/AAD.fs/img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">AAD.fs</li>
+            <li><a href="https://github.com/Azure/AAD.fs">Source Code on GitHub</a></li>
+            <li class="nav-header">Examples</li>
+            <li><a href="https://azure.github.io/AAD.fs/sample.html">Giraffe sample</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+  </html>

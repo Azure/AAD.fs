@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>AAD.fs
+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="Azure AD authorization for F# web APIs"/>
+    <meta name="author" content="Azure Dedicated"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="https://azure.github.io/AAD.fs/content/style_light.css" />
+    <script type="text/javascript" src="https://azure.github.io/AAD.fs/content/tips.js"></script>
+    <style>span.l { display: none }</style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+        </ul>
+        <h3 class="muted"><a href="https://azure.github.io/AAD.fs/index.html">AAD.fs</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          <h1><a name="AAD-fs" class="anchor" href="#AAD-fs">AAD.fs</a></h1>
+<p>The library implements core abstractions that can be used to authorize access to web APIs implemented in Giraffe or Suave with Azure Active Directory, as well as primitives to implement authorization for other servers.</p>
+<h2><a name="Concepts" class="anchor" href="#Concepts">Concepts</a></h2>
+<h3><a name="Requesting-Party" class="anchor" href="#Requesting-Party">Requesting Party</a></h3>
+<p>A user, a service principal (AD Enterprise Application) or a client (AD Application) acting on behalf of a user.</p>
+<h3><a name="Resource-Server" class="anchor" href="#Resource-Server">Resource Server</a></h3>
+<p>Suave or Giraffe server hosting the HTTP endpoints.</p>
+<h3><a name="Roles-and-scopes" class="anchor" href="#Roles-and-scopes">Roles and scopes</a></h3>
+<p>A role is a computed value based on the scope in the request for a token and returned by AD as a claim in the token.
+It can be an AD Role (<code>role</code> claim), an AD Application role (<code>roles</code> claim) or a plain <code>scp</code> scope - all of them will be evaluated by default.</p>
+<h3><a name="Authorization" class="anchor" href="#Authorization">Authorization</a></h3>
+<p><img src="img/flow.svg" alt="flow" /></p>
+<ol>
+<li>When building the application routes construct a <code>PartProtector</code></li>
+<li>By default well-known URI of the AD authority will be contacted</li>
+<li>Retrieved the signing keys will be used later to verify tokens</li>
+<li>Requsting party requests a token, for example using assigned <a href="https://docs.microsoft.com/en-us/azure/architecture/multitenant-identity/app-roles">application roles</a></li>
+<li>Pass the resulting token along with the http request in <code>Authorization</code> header</li>
+<li>Pass the call to <code>PartProtector.Verify</code> - a <code>WebPart</code> that implements the validation</li>
+<li><code>PartProtector</code> asks for demands given the context of the request</li>
+<li><code>Demand</code> is a recursive data stucture, a simple single value can be captured in a <code>Pattern</code></li>
+<li><code>PartProtector</code> checks the token and if matches the claims to the demands</li>
+<li>If successful passes the validated token along into the user's <code>WebPart</code></li>
+<li>If unsuccessful returns either auto-generated or user-specified <code>WebPart</code> for the error</li>
+</ol>
+<p>For the Giraffe example walktrhough see the <a href="https://azure.github.io/AAD.fs/sample.html">sample</a>.</p>
+
+
+        </div>
+        <div class="span3">
+          <img src="https://azure.github.io/AAD.fs/img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">AAD.fs</li>
+            <li><a href="https://github.com/Azure/AAD.fs">Source Code on GitHub</a></li>
+            <li class="nav-header">Examples</li>
+            <li><a href="https://azure.github.io/AAD.fs/sample.html">Giraffe sample</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+  </html>
