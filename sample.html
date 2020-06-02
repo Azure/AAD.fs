@@ -117,7 +117,7 @@ Use <code>*</code> wildcard in any segment of the role value to make any demand 
 <p>And as mentioned above, <code>Admin</code> with its <code>*/*</code> value will meet both of those demands.</p>
 <h2><a name="Requesting-the-token" class="anchor" href="#Requesting-the-token">Requesting the token</a></h2>
 <p>On the Requesting Party side, we need to tell the AD that we need the appRoles assigned to our principals mapped to the token claims.
-We do that by specifying our <code>Application URI</code> as a scope, in case of the registerd sample it will look something like: <code>api://{clientid}/.default</code>, where the <code>/.default</code> suffix is a special identifier that tells AD to figure which role(s) the user has in the application instead of requsting one specific role.
+We do that by specifying our <code>Application URI</code> as a scope, in case of the registerd sample it will look something like: <code>api://{clientid}/.default</code>, where the <code>/.default</code> suffix is a special identifier that tells AD to figure which role(s) the user has in the application instead of requesting one specific role.
 The samples use <a href="https://github.com/AzureAD/microsoft-authentication-library-for-dotnet">MSAL</a> to obtain and refresh the token as needed.</p>
 <h2><a name="Passing-the-token-with-a-call" class="anchor" href="#Passing-the-token-with-a-call">Passing the token with a call</a></h2>
 <p>Considering that the token is refreshed periodically, <code>AsyncRequestor</code> or <code>TaskRequestor</code> can be useful to ensure a token is obtained and associated it with each request.</p>

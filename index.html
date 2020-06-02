@@ -44,7 +44,7 @@ It can be an AD Role (<code>role</code> claim), an AD Application role (<code>ro
 <li>When building the application routes construct a <code>PartProtector</code></li>
 <li>By default well-known URI of the AD authority will be contacted</li>
 <li>Retrieved the signing keys will be used later to verify tokens</li>
-<li>Requsting party requests a token, for example using assigned <a href="https://docs.microsoft.com/en-us/azure/architecture/multitenant-identity/app-roles">application roles</a></li>
+<li>Requesting party requests a token, for example using assigned <a href="https://docs.microsoft.com/en-us/azure/architecture/multitenant-identity/app-roles">application roles</a></li>
 <li>Pass the resulting token along with the http request in <code>Authorization</code> header</li>
 <li>Pass the call to <code>PartProtector.Verify</code> - a <code>WebPart</code> that implements the validation</li>
 <li><code>PartProtector</code> asks for demands given the context of the request</li>
