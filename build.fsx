@@ -234,7 +234,7 @@ let generateDocs _ =
                 Source = "docs/content"
                 OutputDirectory = docs_out
                 LayoutRoots = [ "docs/tools/templates"
-                                ".fake/build.fsx/packages/fsharp.formatting/templates" ]
+                                ".fake/build.fsx/packages/FSharp.Formatting/templates" ]
                 ProjectParameters  = ("root", docsHome)::info
                 Template = "docpage.cshtml" } )
     !!"**/*"
