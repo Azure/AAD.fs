@@ -26,7 +26,7 @@ module Internals =
                 tokenHandler.CreateJwtSecurityToken(
                     oidcConfig.Issuer,
                     audience,
-                    ClaimsIdentity([Claim(ClaimTypes.Role, "Test/read/*")]),
+                    ClaimsIdentity([Claim("role", "Test/read/*")]),
                     Nullable DateTime.UtcNow,
                     Nullable (DateTime.UtcNow + (TimeSpan.FromHours 1.)),
                     Nullable (DateTime.UtcNow + (TimeSpan.FromHours 1.)),
@@ -84,7 +84,7 @@ module Internals =
             let token = Introspection.Introspects()
             let result =
                 token 
-                |> Result.bind (ResourceOwner.validate '/' ResourceOwner.ClaimFilters.isRole (Pattern ["Test"; "read"; "A"]))
+                |> Result.bind (ResourceOwner.validate '/' ResourceOwner.ClaimProjection.ofRole (Pattern ["Test"; "read"; "A"]))
             true =! Result.isOk result
             
         [<Fact>]
@@ -92,8 +92,24 @@ module Internals =
             let token = Introspection.Introspects()
             let result =
                 token 
-                |> Result.bind (ResourceOwner.validate '/' ResourceOwner.ClaimFilters.isScope (Pattern ["Test"; "read"; "A"]))
+                |> Result.bind (ResourceOwner.validate '/' ResourceOwner.ClaimProjection.ofScope (Pattern ["Test"; "read"; "A"]))
             true =! Result.isError result
+            
+        [<Fact>]
+        let ``Scope demand is satisfied`` () =
+            let claims = Seq.singleton (Claim("scp", "Test.read.A Test.write.B"))
+            let token = JwtSecurityToken(claims = claims)
+            let result =
+                ResourceOwner.validate '.' ResourceOwner.ClaimProjection.ofScope (Pattern ["Test"; "read"; "A"]) token
+            true =! Result.isOk result
+            
+        [<Fact>]
+        let ``AppRole demand is satisfied`` () =
+            let claims = [ Claim("roles", "Test/read/A"); Claim("roles", "Test/write/B") ]
+            let token = JwtSecurityToken(claims = claims)
+            let result =
+                ResourceOwner.validate '/' ResourceOwner.ClaimProjection.ofAppRole (Pattern ["Test"; "read"; "A"]) token
+            true =! Result.isOk result
 
 
 /// Fixture to share initialization across all  3BodyProblem tests

@@ -92,13 +92,15 @@ module PartProtector =
         
             let introspect = 
                 (TokenCache.mkDefault(), audiences, conf) |||> Introspector.mkNew 
-            let inline filter claim =
-                ResourceOwner.ClaimFilters.isAppRole claim 
-                || ResourceOwner.ClaimFilters.isRole claim
-                || ResourceOwner.ClaimFilters.isScope claim
+            let project claim =
+                seq {
+                    yield! ResourceOwner.ClaimProjection.ofAppRole claim
+                    yield! ResourceOwner.ClaimProjection.ofRole claim
+                    yield! ResourceOwner.ClaimProjection.ofScope claim
+                }
             
             return mkNew introspect
-                         (ResourceOwner.validate '/' filter) 
+                         (ResourceOwner.validate '/' project) 
                          audiences
                          conf
         }

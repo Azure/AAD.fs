@@ -1,3 +1,7 @@
+### 1.3.0
+
+* Breakup space-delimited claims into multiple entries
+
 ### 1.2.0
 
 * OSS release

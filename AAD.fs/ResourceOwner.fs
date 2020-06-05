@@ -79,17 +79,18 @@ module ResourceOwner =
     open Microsoft.IdentityModel.Protocols.OpenIdConnect
     open System.Security.Claims
     
-    module ClaimFilters = 
-        let isScope (claim: Claim) =
-            claim.Type = "scp"
-            || claim.Type = "http://schemas.microsoft.com/identity/claims/scope"
+    module ClaimProjection = 
+        let ofScope (claim: Claim) : seq<string> =
+            if claim.Type = "scp" then claim.Value |> String.split ' ' :> _
+            else Seq.empty 
 
-        let isRole (claim: Claim) =
-            claim.Type = "role"
-            || claim.Type = ClaimTypes.Role
+        let ofRole (claim: Claim) : seq<string> =
+            if claim.Type = "role" then Seq.singleton claim.Value
+            else Seq.empty
 
-        let isAppRole (claim: Claim) =
-            claim.Type = "roles"
+        let ofAppRole (claim: Claim) : seq<string> =
+            if claim.Type = "roles" then Seq.singleton claim.Value
+            else Seq.empty
 
     let mkNew (introspect: TokenString -> Awaitable<Result<JwtSecurityToken,string>>)
               (validate: Demand -> JwtSecurityToken -> Result<JwtSecurityToken,string>)
@@ -118,11 +119,11 @@ module ResourceOwner =
                 }
         }
 
-    let validate (splitChar: char) (claimsFilter: Claim -> bool) (demand: Demand) (t: JwtSecurityToken) = 
+    let validate (splitChar: char) (claimsProjection: Claim -> #seq<string>) (demand: Demand) (t: JwtSecurityToken) = 
         let claims =
             t.Claims
-            |> Seq.filter claimsFilter
-            |> Seq.map (fun c -> c.Value |> String.split splitChar)
+            |> Seq.collect claimsProjection
+            |> Seq.map (String.split splitChar)
         demand
         |> Demand.eval claims  
         |> function true -> Ok t | _ -> Error (sprintf "Demand not met: %A" demand)
