@@ -29,7 +29,7 @@ steps:
         command: custom
         custom: fake
         ${{ if startsWith(variables['Build.SourceBranch'], 'refs/tags') }}:
-            arguments: 'build -t publish'
+            arguments: 'build -t release'
         ${{ if not(startsWith(variables['Build.SourceBranch'], 'refs/tags')) }}:
             arguments: build
             
