@@ -202,10 +202,10 @@ Target.create "publish" (fun _ ->
 
 Target.create "meta" (fun _ ->
     [ "<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">"
+      "<Import Project=\"common.props\" />"
       "<PropertyGroup>"
       sprintf "<PackageProjectUrl>%s/%s</PackageProjectUrl>" gitHome gitName
       "<PackageLicense>MIT</PackageLicense>"
-      sprintf "<RepositoryUrl>%s</RepositoryUrl>" gitRepo
       sprintf "<PackageReleaseNotes>%s</PackageReleaseNotes>" (List.head release.Notes)
       "<PackageIconUrl>https://raw.githubusercontent.com/Azure/AAD.fs/master/docs/files/img/logo.png</PackageIconUrl>"
       "<PackageTags>suave;giraffe;fsharp</PackageTags>"
