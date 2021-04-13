@@ -96,6 +96,7 @@ module PartProtector =
                     return r
                 })
         
+            let! _ = getConfiguration() // prime the config cache
             let introspect = 
                 (TokenCache.mkDefault(), audiences, getConfiguration) |||> Introspector.mkNew 
             let project claim =
@@ -104,7 +105,6 @@ module PartProtector =
                     yield! ResourceOwner.ClaimProjection.ofRole claim
                     yield! ResourceOwner.ClaimProjection.ofScope claim
                 }
-            
             return mkNew introspect
                          (ResourceOwner.validate '/' project) 
                          audiences
