@@ -22,7 +22,7 @@ The library ships as following packages:
 #### Building
 
 ##### Prerequisites
-The build requires at least .NET Core SDK 3 installed.
+The build requires at least .NET Core SDK 5 installed.
 When building for the first time restore the local tools, in this directory run:
 
 * `dotnet tool restore` to install [FAKE](https://fake.build/fake-gettingstarted.html), then
