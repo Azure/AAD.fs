@@ -14,16 +14,16 @@ module internal TokenCache =
         let cache = new MemoryCache(options)
         let getOrAdd key (mkEntry: string -> Task<Result<JwtSecurityToken,_>>) =
             cache.GetOrCreateAsync(key, fun e -> task {
-                                            let! r = mkEntry key
-                                            match r with
-                                            | Ok entry ->
-                                                e.SetAbsoluteExpiration (DateTimeOffset entry.ValidTo) |> ignore
-                                            | _ -> 
-                                                e.SetSlidingExpiration (TimeSpan.FromMinutes 1.) |> ignore
-                                                e.SetPriority CacheItemPriority.Low |> ignore
-                                            e.SetSize 1L |> ignore                                            
-                                            return r
-                                        })
+                let! r = mkEntry key
+                match r with
+                | Ok entry ->
+                    e.SetAbsoluteExpiration (DateTimeOffset entry.ValidTo) |> ignore
+                | _ -> 
+                    e.SetSlidingExpiration (TimeSpan.FromMinutes 1.) |> ignore
+                    e.SetPriority CacheItemPriority.Low |> ignore
+                e.SetSize 1L |> ignore                                            
+                return r
+            })
         getOrAdd
         
     let mkDefault () =
@@ -37,33 +37,37 @@ module internal Introspector =
     open YoLo
     open Microsoft.IdentityModel.Tokens
     open Microsoft.IdentityModel.Protocols.OpenIdConnect
+    open FSharp.Control.Tasks.V2.ContextInsensitive
 
     let mkNew (cache:string -> (string -> Task<_>) -> Task<_>)
               (audiences: #seq<Audience>)
-              (oidcConfig: OpenIdConnectConfiguration)= 
-        let vparams = TokenValidationParameters
-                        (ValidIssuer = oidcConfig.Issuer,
-                         ValidAudiences = Seq.map Audience.toString audiences,
-                         IssuerSigningKeys = oidcConfig.SigningKeys)
+              (getConfig: unit -> Awaitable<OpenIdConnectConfiguration>) = 
         let handler = JwtSecurityTokenHandler()
 
         let local (jwtEncodedString: string) =
-            try
-                let _,token = handler.ValidateToken(jwtEncodedString,vparams)
-                Ok (token :?> JwtSecurityToken)
-            with err ->
-                Error err.Message
+            task {
+                try
+                    let! oidcConfig = getConfig()
+                    let vparams = TokenValidationParameters
+                                    (ValidIssuer = oidcConfig.Issuer,
+                                     ValidAudiences = Seq.map Audience.toString audiences,
+                                     IssuerSigningKeys = oidcConfig.SigningKeys)
+                    let _,token = handler.ValidateToken(jwtEncodedString,vparams)
+                    return Ok (token :?> JwtSecurityToken)
+                with err ->
+                    return Error err.Message
+            }
                 
         let parse s =
             s
             |> String.split '.'
             |> function | [_;_;_] -> local s
-                        | [""] -> Error "No token"
-                        | _ -> Error "Unsupported token"
+                        | [""] -> Error "No token" |> Task.FromResult
+                        | _ -> Error "Unsupported token" |> Task.FromResult
                 
         fun (TokenString s) ->
             awaitable {
-                let! r = cache s (parse >> Task.FromResult)
+                let! r = cache s parse
                 return r
             }
 
@@ -95,21 +99,22 @@ module ResourceOwner =
     let mkNew (introspect: TokenString -> Awaitable<Result<JwtSecurityToken,string>>)
               (validate: Demand -> JwtSecurityToken -> Result<JwtSecurityToken,string>)
               (audiences: #seq<Audience>)
-              (oidcConfig: OpenIdConnectConfiguration) =
+              (getConfig: unit -> Awaitable<OpenIdConnectConfiguration>) =
         { new ResourceOwner with
             member __.Validate (demand: Demand)
                                (onSuccess: JwtSecurityToken -> unit)
                                (onUnauthorized: JwtSecurityToken option -> WWWAuthenticate -> unit)
                                (tokenString: TokenString) =
                 awaitable {
+                    let! oidcConfig = getConfig()
                     let! introspected = introspect tokenString
                     let validated = introspected |> Result.bind (validate demand)
 
                     let wwwAuthenticate err = 
-                        sprintf "Bearer realm=\"%s\", audience=\"%A\", error_description=\"%s\""
-                                oidcConfig.Issuer
-                                (audiences |> Seq.map Audience.toString |> String.concat ",")
-                                err
+                            sprintf "Bearer realm=\"%s\", audience=\"%A\", error_description=\"%s\""
+                                    oidcConfig.Issuer
+                                    (audiences |> Seq.map Audience.toString |> String.concat ",")
+                                    err
                     match validated, introspected with
                     | Ok t,_ -> onSuccess t
                     | Error err, Ok t -> 

@@ -1,3 +1,7 @@
+### 2.0.0
+
+* Breaking API change: load OIDC configuration on demand and refresh every 24h 
+
 ### 1.3.0
 
 * Breakup space-delimited claims into multiple entries

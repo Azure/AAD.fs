@@ -12,7 +12,7 @@ trigger:
 steps:
     - task: UseDotNet@2
       inputs:
-        version: '3.1.300'
+        version: '5.0.100'
 
     - task: DotNetCoreCLI@2
       displayName: "Restore tools"

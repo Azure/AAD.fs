@@ -7,7 +7,7 @@ module Readers =
 
     let bearer (ctx: HttpContext) =
         ctx.TryGetRequestHeader "Authorization"
-        |> Option.map (String.split ' ') 
+        |> Option.map (String.trim >> String.split ' ') 
         |> Option.bind (function ["Bearer"; token] -> Some token | _ -> None)
 
     let bearerTokenString : HttpContext -> TokenString =

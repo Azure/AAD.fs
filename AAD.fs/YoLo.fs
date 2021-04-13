@@ -328,25 +328,13 @@ module Option =
 type Base64String = string
 
 module String =
-  open System.Globalization // needed when using DNXCORE50
-  open System.IO
-  open System.Security.Cryptography
-
   /// Also, invariant culture
   let equals (a: string) (b: string) =
-#if DNXCORE50
-    (CultureInfo.InvariantCulture.CompareInfo.GetStringComparer(CompareOptions.None)).Equals(a, b)
-#else
     a.Equals(b, StringComparison.InvariantCulture)
-#endif
 
   /// Also, invariant culture
   let equalsCaseInsensitive (a: string) (b: string) =
-#if DNXCORE50
-    (CultureInfo.InvariantCulture.CompareInfo.GetStringComparer(CompareOptions.IgnoreCase)).Equals(a, b)
-#else
     a.Equals(b, StringComparison.InvariantCultureIgnoreCase)
-#endif
     
   /// Compare ordinally with ignore case.
   let equalsOrdinalCI (str1: string) (str2: string) =
@@ -408,25 +396,13 @@ module Bytes =
     sha.ComputeHash ms
 
   let sha1 =
-#if DNXCORE50
-    hash (fun () -> SHA1.Create())
-#else
     hash (fun () -> new SHA1Managed())
-#endif
 
   let sha256 =
-#if DNXCORE50
-    hash (fun () -> SHA256.Create())
-#else
     hash (fun () -> new SHA256Managed())
-#endif
 
   let sha512 =
-#if DNXCORE50
-    hash (fun () -> SHA512.Create())
-#else
     hash (fun () -> new SHA512Managed())
-#endif
 
   let toHex (bs: byte[]) =
     BitConverter.ToString bs
@@ -801,11 +777,7 @@ module App =
 
   /// Gets the calling assembly's informational version number as a string
   let getVersion () =
-#if DNXCORE50
-    (typeof<Random>.GetTypeInfo().Assembly)
-#else
     Assembly.GetCallingAssembly()
-#endif
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             .InformationalVersion
 
@@ -824,11 +796,7 @@ module App =
 
   /// Get the current assembly resource
   let resource =
-#if DNXCORE50
-    let assembly = typeof<Random>.GetTypeInfo().Assembly
-#else
     let assembly = Assembly.GetExecutingAssembly ()
-#endif
     resourceIn assembly
 
 module Dictionary =
