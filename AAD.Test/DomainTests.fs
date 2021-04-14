@@ -7,6 +7,11 @@ open AAD
 module DemandTests =
 
     [<Fact>]
+    let ``All when empty`` () =
+        All []
+        |> Demand.eval [] =! true
+
+    [<Fact>]
     let ``All when present`` () =
         All [Pattern ["A";"1"]; Pattern ["B";"2"]]
         |> Demand.eval [["A";"1"]; ["B";"2"]] =! true

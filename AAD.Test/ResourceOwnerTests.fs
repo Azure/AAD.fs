@@ -16,7 +16,7 @@ module Internals =
     module Introspection =
         let audience = ".default"
         let introspect = 
-              (TokenCache.mkDefault(), [Audience audience], oidcConfig)
+              (TokenCache.mkDefault(), [Audience audience], fun _ -> Async.result oidcConfig)
               |||> Introspector.mkNew 
         
         [<Fact>]

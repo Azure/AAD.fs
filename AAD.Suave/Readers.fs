@@ -12,7 +12,7 @@ module Readers =
 
     let bearer ctx =
         ctx.request.header "Authorization"
-        |> Choice.map (String.split ' ') 
+        |> Choice.map (String.trim >> String.split ' ') 
         |> Choice.bind (function ["Bearer"; token] -> Choice1Of2 token | _ -> Choice2Of2 "")
         |> Choice.bindSnd (fun _ -> Choice2Of2 "")
 

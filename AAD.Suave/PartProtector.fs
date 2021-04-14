@@ -4,6 +4,8 @@ open Suave
 open Suave.Operators
 open System.IdentityModel.Tokens.Jwt
 open Microsoft.IdentityModel.Protocols.OpenIdConnect
+open Microsoft.Extensions.Caching.Memory
+open FSharp.Control.Tasks.V2.ContextInsensitive
 
 /// PartProtector is the interface for a stateful protector instance.
 /// Use PartProtector module to create the instances implementing this interface.
@@ -42,12 +44,9 @@ module PartProtector =
     let mkNew (introspect: TokenString -> Async<Result<JwtSecurityToken,string>>)
               (validate: Demand -> JwtSecurityToken -> Result<JwtSecurityToken,string>)
               (audiences: #seq<Audience>)
-              (oidcConfig: OpenIdConnectConfiguration) =
+              (getConfig: unit -> Async<OpenIdConnectConfiguration>) =
         let resourceOwner =
-            ResourceOwner.mkNew introspect
-                                validate
-                                audiences
-                                oidcConfig
+            ResourceOwner.mkNew introspect validate audiences getConfig
                                                       
         { new PartProtector with 
             member __.Verify (getDemand: HttpContext -> Async<Demand>) 
@@ -84,21 +83,29 @@ module PartProtector =
                   (audiences: #seq<Audience>)
                   (authority: System.Uri) =
         async {
-            let! conf = OpenIdConnectConfigurationRetriever
-                            .GetAsync(sprintf "%O/.well-known/openid-configuration" authority, httpClient, System.Threading.CancellationToken.None)
-                        |> Async.AwaitTask                        
+            let getConfiguration =
+                let cache = new MemoryCache(new MemoryCacheOptions(SizeLimit = 1L)) 
+                fun () -> 
+                    cache.GetOrCreateAsync(1, fun e -> task {
+                        let! r = OpenIdConnectConfigurationRetriever
+                                    .GetAsync(sprintf "%O/.well-known/openid-configuration" authority, httpClient, System.Threading.CancellationToken.None)
+                                    .ConfigureAwait false
+                        e.SetAbsoluteExpiration (System.TimeSpan.FromHours 24.) |> ignore
+                        e.SetSize 1L |> ignore
+                        return r
+                    }) |> Async.AwaitTask
         
+            let! _ = getConfiguration() // prime the config cache
             let introspect = 
-                (TokenCache.mkDefault(), audiences, conf) |||> Introspector.mkNew 
+                (TokenCache.mkDefault(), audiences, getConfiguration) |||> Introspector.mkNew 
             let project claim =
                 seq {
                     yield! ResourceOwner.ClaimProjection.ofAppRole claim
                     yield! ResourceOwner.ClaimProjection.ofRole claim
                     yield! ResourceOwner.ClaimProjection.ofScope claim
                 }
-
             return mkNew introspect
                          (ResourceOwner.validate '/' project) 
                          audiences
-                         conf
+                         getConfiguration
         }
