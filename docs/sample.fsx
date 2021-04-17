@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../AAD.tasks.Test/bin/Debug/net5.0"
+#I "../AAD.tasks.Test/bin/Debug/net5.0"
 #r "TaskBuilder.fs.dll"
 #r "AAD.Giraffe.dll"
 #r "AAD.fs.tasks.dll"
@@ -35,20 +35,20 @@ For simplicity, the sample uses service principals as identities for the Request
 
 Once provisioned you can find these roles in the application's manifest, it will look something like this:
 
-![appRoles](img/manifest_roles.png)
+![appRoles](content/manifest_roles.png)
 
 
 Requesting Party service principals will have the corresponding roles assigned, which you can check in the Enterprise Application's `Users and Groups` blade:
 
-![assignments](img/assignments.png)
+![assignments](content/assignments.png)
 
 
 Authoring the roles
 ---------
 The role values can be anything you need. The example here demonstrates the capability of the library to deal with patterns and wildcards:
 
-A "pattern" means that we can expect a structure in the value, like "items/r" or "items.r" - `/` is the default separator, but the character is configurable - use `PartProtector.mkNew` instead of `mkDefault` if you need to change it.
-Use `*` wildcard in any segment of the role value to make any demand match that part of the pattern, for example `items/*` in the role value will match the demands like `items/r`, `items/w`, etc.
+A "pattern" means that we can expect a structure in the value, like "items/r" or "items.r" - `/` is the default separator, but the character is configurable - use `PartProtector.mkNew` instead of `mkDefault` if you need to change it. </br>
+Use `*` wildcard in any segment of the role value to make any demand match that part of the pattern, for example `items/*` in the role value will match the demands like `items/r`, `items/w`, etc. </br>
 `*/*` means that the identity with that claim in the token will have access to APIs that demand `items`, `fiddles/play`, `cats/herd`, etc with or w/o any 2nd (verb) segment.
 
 Complex demands can be expressed by combining the patterns with `Any` and `All`, for example:

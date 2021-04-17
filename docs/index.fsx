@@ -16,7 +16,7 @@ It can be an AD Role (`role` claim), an AD Application role (`roles` claim) or a
 
 ### Authorization
 
-![flow](img/flow.svg)
+![flow](content/flow.svg)
 
 1. When building the application routes construct a `PartProtector`
 1. By default well-known URI of the AD authority will be contacted
@@ -30,9 +30,28 @@ It can be an AD Role (`role` claim), an AD Application role (`roles` claim) or a
 1. If successful passes the validated token along into the user's `WebPart`
 1. If unsuccessful returns either auto-generated or user-specified `WebPart` for the error
 
+</br>
 
-For the Giraffe example walktrhough see the [sample](https://azure.github.io/AAD.fs/sample.html).
+For the Giraffe example walkthrough see the [sample](https://azure.github.io/AAD.fs/sample.html).
+
+</br>
+ 
+Contributing and copyright
+--------------------------
+The project is hosted on [GitHub][gh] where you can [report issues][issues], fork 
+the project and submit pull requests. 
+
+The library is available under MIT license, which allows modification and 
+redistribution for both commercial and non-commercial purposes. For more information see the 
+[License file][license] in the GitHub repository. 
+
+  [content]: https://github.com/Azure/DatatypeChannels.ASB/tree/master/docs/content
+  [gh]: https://github.com/Azure/DatatypeChannels.ASB
+  [issues]: https://github.com/Azure/DatatypeChannels.ASB/issues
+  [readme]: https://github.com/Azure/DatatypeChannels.ASB/blob/master/README.md
+  [license]: https://github.com/Azure/DatatypeChannels.ASB/blob/master/LICENSE.md
+
+
+Copyright 2021 Microsoft
 *)
-
-
 

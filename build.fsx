@@ -1,13 +1,10 @@
 #r "paket:
-storage: packages
+nuget FSharp.Core ~> 4.7
 nuget Fake.DotNet.Cli
 nuget Fake.IO.FileSystem
 nuget Fake.Core.ReleaseNotes
 nuget Fake.Core.Target
-nuget Fake.Tools.Git
-nuget FSharp.Formatting
-nuget FSharp.Formatting.CommandTool
-nuget Fake.DotNet.FSFormatting //"
+nuget Fake.Tools.Git //"
 #load "./.fake/build.fsx/intellisense.fsx"
 #if !FAKE
   #r "Facades/netstandard"
@@ -26,6 +23,7 @@ let gitName = "AAD.fs"
 let gitOwner = "Azure"
 let gitHome = sprintf "https://github.com/%s" gitOwner
 let gitRepo = sprintf "git@github.com:%s/%s.git" gitOwner gitName
+let gitContent = sprintf "https://raw.githubusercontent.com/%s/%s" gitOwner gitName
 
 let release = ReleaseNotes.load "RELEASE_NOTES.md"
 let ver =
@@ -206,68 +204,46 @@ Target.create "meta" (fun _ ->
       "<PropertyGroup>"
       sprintf "<PackageProjectUrl>%s/%s</PackageProjectUrl>" gitHome gitName
       "<PackageLicense>MIT</PackageLicense>"
+      sprintf "<RepositoryUrl>%s/%s</RepositoryUrl>" gitHome gitName
       sprintf "<PackageReleaseNotes>%s</PackageReleaseNotes>" (List.head release.Notes)
       "<PackageIconUrl>https://raw.githubusercontent.com/Azure/AAD.fs/master/docs/files/img/logo.png</PackageIconUrl>"
       "<PackageTags>suave;giraffe;fsharp</PackageTags>"
       sprintf "<Version>%s</Version>" (string ver)
+      "<Copyright>(c) Microsoft Corporation. All rights reserved.</Copyright>"
+      sprintf "<FsDocsLogoLink>%s/master/docs/content/logo.png</FsDocsLogoLink>" gitContent
+      sprintf "<FsDocsLicenseLink>%s/blob/master/LICENSE.md</FsDocsLicenseLink>" gitRepo
+      sprintf "<FsDocsReleaseNotesLink>%s/blob/master/RELEASE_NOTES.md</FsDocsReleaseNotesLink>" gitRepo
+      "<FsDocsNavbarPosition>fixed-right</FsDocsNavbarPosition>"
+      "<FsDocsWarnOnMissingDocs>true</FsDocsWarnOnMissingDocs>"
+      "<FsDocsTheme>default</FsDocsTheme>"
       "</PropertyGroup>"
       "</Project>"]
     |> File.write false "Directory.Build.props"
 )
 
-
-// --------------------------------------------------------------------------------------
-// Generate the documentation
-let docs_out = "docs/output"
-let docsHome = "https://azure.github.io/AAD.fs"
-
-let generateDocs _ =
-    let info =
-      [ "project-name", "AAD.fs"
-        "project-author", "Azure Dedicated"
-        "project-summary", "Azure AD authorization for F# web APIs"
-        "project-github", sprintf "%s/%s" gitHome gitName
-        "project-nuget", "http://nuget.org/packages/AAD.fs" ]
-
-    FSFormatting.createDocs (fun args ->
-            { args with
-                Source = "docs/content"
-                OutputDirectory = docs_out
-                LayoutRoots = [ "docs/tools/templates"
-                                ".fake/build.fsx/packages/FSharp.Formatting/templates" ]
-                ProjectParameters  = ("root", docsHome)::info
-                Template = "docpage.cshtml" } )
-    !!"**/*"
-    |> GlobbingPattern.setBaseDir "docs/files"
-    |> Shell.copyFilesWithSubFolder "docs/output"
-    !!"**/*"
-    |> GlobbingPattern.setBaseDir ".fake/build.fsx/packages/FSharp.Formatting/styles"
-    |> Shell.copyFilesWithSubFolder "docs/output"
-
-Target.create "generateDocs" generateDocs
+Target.create "generateDocs" (fun _ ->
+   Shell.cleanDir ".fsdocs"
+   DotNet.exec id "fsdocs" "build --clean" |> ignore
+)
 
 Target.create "watchDocs" (fun _ ->
-    use watcher =
-        (!! "docs/content/**/*.*")
-        |> ChangeWatcher.run generateDocs
-
-    Trace.traceImportant "Waiting for help edits. Press any key to stop."
-    System.Console.ReadKey() |> ignore
-    watcher.Dispose()
+   Shell.cleanDir ".fsdocs"
+   DotNet.exec id "fsdocs" "watch" |> ignore
 )
 
 Target.create "releaseDocs" (fun _ ->
-    let tempDocsDir = "temp/gh-pages"
+    let tempDocsDir = "tmp/gh-pages"
     Shell.cleanDir tempDocsDir
     Git.Repository.cloneSingleBranch "" gitRepo "gh-pages" tempDocsDir
 
-    Shell.copyRecursive docs_out tempDocsDir true |> Trace.tracefn "%A"
+    Shell.copyRecursive "output" tempDocsDir true |> Trace.tracefn "%A"
     Git.Staging.stageAll tempDocsDir
     Git.Commit.exec tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
     Git.Branches.push tempDocsDir
 )
 
 Target.create "release" ignore
+Target.create "ci" ignore
 
 "clean"
   ==> "restore"
@@ -281,9 +257,12 @@ Target.create "release" ignore
   <== ["test"; "generateDocs" ]
 
 "integration"
- <== [ "test" ]
+  <== [ "test" ]
 
 "release"
- <== [ "meta"; "publish" ]
+  <== [ "meta"; "publish" ]
+
+"ci"
+  <== [ "package" ]
 
 Target.runOrDefault "test"

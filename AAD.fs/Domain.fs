@@ -23,8 +23,11 @@ type UserName = UserName of string
 type Password = Password of string 
 
 type Demand = 
+   /// Components of the claim, left to right
    | Pattern of string list
+   /// Any demand on the list will suffice
    | Any of Demand list
+   /// All demands on the list must be met
    | All of Demand list
 
 [<Struct>]
