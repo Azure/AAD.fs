@@ -1,0 +1,22 @@
+#fsdocs-content p {
+    font-size: 0.8rem;
+    line-height: 1rem;
+    letter-spacing: 0.01px;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #262626;
+}
+
+#fsdocs-content li {
+    font-size: 0.8rem;
+    line-height: 1rem;
+    letter-spacing: 0.01px;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #262626;
+}
+
+#fsdocs-content code {
+    font-size: 0.8rem;
+    background-color: #f7f7f900;
+    border: 0px;
+    padding: 0px;
+}

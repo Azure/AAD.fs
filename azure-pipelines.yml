@@ -31,5 +31,5 @@ steps:
         ${{ if startsWith(variables['Build.SourceBranch'], 'refs/tags') }}:
             arguments: 'build -t release'
         ${{ if not(startsWith(variables['Build.SourceBranch'], 'refs/tags')) }}:
-            arguments: build
+            arguments: build -t ci
             

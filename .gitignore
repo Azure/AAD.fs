@@ -11,7 +11,7 @@ obj/
 packages/
 
 .fake
-docs/output/
-temp/
+output/
+tmp/
 *.user
 Directory.Build.props
