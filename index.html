@@ -1,34 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8"/>
+
+<head>
+    <meta charset="utf-8">
     <title>AAD.fs
 </title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <meta name="description" content="Azure AD authorization for F# web APIs"/>
-    <meta name="author" content="Azure Dedicated"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="AAD.fs">
 
-    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
-    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
-    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
-    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.3.1/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 
-    <link type="text/css" rel="stylesheet" href="https://azure.github.io/AAD.fs/style_light.css" />
-    <script type="text/javascript" src="https://azure.github.io/AAD.fs/tips.js"></script>
-    <style>span.l { display: none }</style>
-  </head>
-  <body>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link type="text/css" rel="stylesheet" href="https://github.com/Azure/AAD.fs/content/navbar-fixed-right.css" />
+    <link type="text/css" rel="stylesheet" href="https://github.com/Azure/AAD.fs/content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://github.com/Azure/AAD.fs/content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://github.com/Azure/AAD.fs/content/fsdocs-tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-menu">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+            <a href="https://github.com/Azure/AAD.fs/"><img id="fsdocs-logo" src="https://raw.githubusercontent.com/Azure/AAD.fs/master/docs/content/logo.png" /></a>
+            <ul class="navbar-nav">
+                <li class="nav-header">Links</li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="git@github.com:Azure/AAD.fs.git/blob/master/LICENSE.md">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="git@github.com:Azure/AAD.fs.git/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/Azure/AAD.fs/">Source Repository</a></li>
+                <li class="nav-header">
+  Documentation
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://github.com/Azure/AAD.fs/sample.html">
+    sample
+  </a>
+</li>
+            </ul>
+        </div>
+    </nav>
     <div class="container">
-      <div class="masthead">
-        <ul class="nav nav-pills pull-right">
-          <li><a href="http://fsharp.org">fsharp.org</a></li>
-        </ul>
-        <h3 class="muted"><a href="https://azure.github.io/AAD.fs/index.html">AAD.fs</a></h3>
-      </div>
-      <hr />
-      <div class="row">
-        <div class="span9" id="main">
-          <h1><a name="AAD-fs" class="anchor" href="#AAD-fs">AAD.fs</a></h1>
+        <div class="masthead">
+            <h3 class="muted"><a href="https://github.com/Azure/AAD.fs/">AAD.fs</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <h1><a name="AAD-fs" class="anchor" href="#AAD-fs">AAD.fs</a></h1>
 <p>The library implements core abstractions that can be used to authorize access to web APIs implemented in Giraffe or Suave with Azure Active Directory, as well as primitives to implement authorization for other servers.</p>
 <h2><a name="Concepts" class="anchor" href="#Concepts">Concepts</a></h2>
 <h3><a name="Requesting-Party" class="anchor" href="#Requesting-Party">Requesting Party</a></h3>
@@ -39,7 +68,7 @@
 <p>A role is a computed value based on the scope in the request for a token and returned by AD as a claim in the token.
 It can be an AD Role (<code>role</code> claim), an AD Application role (<code>roles</code> claim) or a plain <code>scp</code> scope - all of them will be evaluated by default.</p>
 <h3><a name="Authorization" class="anchor" href="#Authorization">Authorization</a></h3>
-<p><img src="img/flow.svg" alt="flow" /></p>
+<p><img src="content/flow.svg" alt="flow" /></p>
 <ol>
 <li>When building the application routes construct a <code>PartProtector</code></li>
 <li>By default well-known URI of the AD authority will be contacted</li>
@@ -53,20 +82,29 @@ It can be an AD Role (<code>role</code> claim), an AD Application role (<code>ro
 <li>If successful passes the validated token along into the user's <code>WebPart</code></li>
 <li>If unsuccessful returns either auto-generated or user-specified <code>WebPart</code> for the error</li>
 </ol>
-<p>For the Giraffe example walktrhough see the <a href="https://azure.github.io/AAD.fs/sample.html">sample</a>.</p>
+</br>
+<p>For the Giraffe example walkthrough see the <a href="https://azure.github.io/AAD.fs/sample.html">sample</a>.</p>
+</br>
+<h2><a name="Contributing-and-copyright" class="anchor" href="#Contributing-and-copyright">Contributing and copyright</a></h2>
+<p>The project is hosted on <a href="https://github.com/Azure/AAD.fs">GitHub</a> where you can <a href="https://github.com/Azure/AAD.fs/issues">report issues</a>, fork
+the project and submit pull requests.</p>
+<p>The library is available under MIT license, which allows modification and
+redistribution for both commercial and non-commercial purposes. For more information see the
+<a href="https://github.com/Azure/AAD.fs/blob/master/LICENSE.md">License file</a> in the GitHub repository.</p>
 
+            
+        </div>
 
-        </div>
-        <div class="span3">
-          <img src="https://azure.github.io/AAD.fs/img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
-          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
-            <li class="nav-header">AAD.fs</li>
-            <li><a href="https://github.com/Azure/AAD.fs">Source Code on GitHub</a></li>
-            <li class="nav-header">Examples</li>
-            <li><a href="https://azure.github.io/AAD.fs/sample.html">Giraffe sample</a></li>
-          </ul>
-        </div>
-      </div>
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://github.com/Azure/AAD.fs/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://github.com/Azure/AAD.fs/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
     </div>
-  </body>
-  </html>
+
+    <div style="text-align: center">(c) Microsoft Corporation. All rights reserved.</div>
+</body>
+
+</html>

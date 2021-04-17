@@ -1,0 +1,38 @@
+@startuml
+autonumber
+actor "Requesting Party (RP)" as RP #white
+participant "Authorization Server (AS)" as AS #white
+participant "Resource Server (RS)" as RS #white
+participant "PartProtector (PP)" as PP #white
+participant "WebPart" #white
+
+== RS intializes PartProtector ==
+activate RS 
+RS -> PP : mkDefault
+activate PP 
+PP -> AS : /.well-known/openid-configuration
+activate AS 
+AS --> PP : signing keys, etc
+deactivate AS
+== RP calling Resource Server ==
+activate RP
+RP -> AS : request a token specifying the RS as a scope
+activate AS
+AS --> RP : token
+deactivate AS
+RP -> RS : pass the Bearer token with a call
+RS -> PP : Verify(getDemand,onSuccess,onError)
+PP -> RS : getDemand(HttpContext)
+RS --> PP : the demand
+alt the token is valid and the claims match the demands
+PP -> WebPart : onSuccess(JwtSecurityToken)
+activate WebPart
+WebPart --> PP 
+deactivate WebPart
+PP --> RS : Success WebPart 
+else the token is invalid or the claims fail to meet the demands
+PP --> RS : Error WebPart 
+end
+RS --> RP  
+
+@enduml
