@@ -1,5 +1,5 @@
 (** AAD.fs
-======================
+---------------
 The library implements core abstractions that can be used to authorize access to web APIs implemented in Giraffe or Suave with Azure Active Directory, as well as primitives to implement authorization for other servers.
 
 Concepts

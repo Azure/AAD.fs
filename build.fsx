@@ -207,14 +207,14 @@ Target.create "meta" (fun _ ->
       "<PackageLicense>MIT</PackageLicense>"
       sprintf "<RepositoryUrl>%s/%s</RepositoryUrl>" gitHome gitName
       sprintf "<PackageReleaseNotes>%s</PackageReleaseNotes>" (List.head release.Notes)
-      "<PackageIconUrl>https://raw.githubusercontent.com/Azure/AAD.fs/master/docs/img/logo.png</PackageIconUrl>"
+      sprintf "<PackageIconUrl>%s/master/docs/img/logo.png</PackageIconUrl>" gitContent
       "<PackageTags>suave;giraffe;fsharp</PackageTags>"
       sprintf "<Version>%s</Version>" (string ver)
       "<Authors>Eugene Tolmachev</Authors>"
       "<Copyright>(c) Microsoft Corporation. All rights reserved.</Copyright>"
       sprintf "<FsDocsLogoSource>%s/master/docs/img/logo.png</FsDocsLogoSource>" gitContent
-      sprintf "<FsDocsLicenseLink>%s/blob/master/LICENSE.md</FsDocsLicenseLink>" gitRepo
-      sprintf "<FsDocsReleaseNotesLink>%s/blob/master/RELEASE_NOTES.md</FsDocsReleaseNotesLink>" gitRepo
+      sprintf "<FsDocsLicenseLink>%s/%s/blob/master/LICENSE</FsDocsLicenseLink>" gitHome gitName
+      sprintf "<FsDocsReleaseNotesLink>%s/%s/blob/master/RELEASE_NOTES.md</FsDocsReleaseNotesLink>" gitHome gitName
       "<FsDocsNavbarPosition>fixed-right</FsDocsNavbarPosition>"
       "<FsDocsWarnOnMissingDocs>true</FsDocsWarnOnMissingDocs>"
       "<FsDocsTheme>default</FsDocsTheme>"
