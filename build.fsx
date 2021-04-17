@@ -22,6 +22,7 @@ open System.Text.RegularExpressions
 let gitName = "AAD.fs"
 let gitOwner = "Azure"
 let gitHome = sprintf "https://github.com/%s" gitOwner
+let gitIO = sprintf "https://%s.github.io/%s" gitOwner gitName
 let gitRepo = sprintf "git@github.com:%s/%s.git" gitOwner gitName
 let gitContent = sprintf "https://raw.githubusercontent.com/%s/%s" gitOwner gitName
 
@@ -202,15 +203,16 @@ Target.create "meta" (fun _ ->
     [ "<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">"
       "<Import Project=\"common.props\" />"
       "<PropertyGroup>"
-      sprintf "<PackageProjectUrl>%s/%s</PackageProjectUrl>" gitHome gitName
+      sprintf "<PackageProjectUrl>%s</PackageProjectUrl>" gitIO
       "<PackageLicense>MIT</PackageLicense>"
       sprintf "<RepositoryUrl>%s/%s</RepositoryUrl>" gitHome gitName
       sprintf "<PackageReleaseNotes>%s</PackageReleaseNotes>" (List.head release.Notes)
-      "<PackageIconUrl>https://raw.githubusercontent.com/Azure/AAD.fs/master/docs/files/img/logo.png</PackageIconUrl>"
+      "<PackageIconUrl>https://raw.githubusercontent.com/Azure/AAD.fs/master/docs/img/logo.png</PackageIconUrl>"
       "<PackageTags>suave;giraffe;fsharp</PackageTags>"
       sprintf "<Version>%s</Version>" (string ver)
+      "<Authors>Eugene Tolmachev</Authors>"
       "<Copyright>(c) Microsoft Corporation. All rights reserved.</Copyright>"
-      sprintf "<FsDocsLogoLink>%s/master/docs/content/logo.png</FsDocsLogoLink>" gitContent
+      sprintf "<FsDocsLogoSource>%s/master/docs/img/logo.png</FsDocsLogoSource>" gitContent
       sprintf "<FsDocsLicenseLink>%s/blob/master/LICENSE.md</FsDocsLicenseLink>" gitRepo
       sprintf "<FsDocsReleaseNotesLink>%s/blob/master/RELEASE_NOTES.md</FsDocsReleaseNotesLink>" gitRepo
       "<FsDocsNavbarPosition>fixed-right</FsDocsNavbarPosition>"
@@ -235,7 +237,7 @@ Target.create "releaseDocs" (fun _ ->
     let tempDocsDir = "tmp/gh-pages"
     Shell.cleanDir tempDocsDir
     Git.Repository.cloneSingleBranch "" gitRepo "gh-pages" tempDocsDir
-
+    Git.Repository.fullclean tempDocsDir
     Shell.copyRecursive "output" tempDocsDir true |> Trace.tracefn "%A"
     Git.Staging.stageAll tempDocsDir
     Git.Commit.exec tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
@@ -249,6 +251,7 @@ Target.create "ci" ignore
   ==> "restore"
   ==> "build"
   ==> "test"
+  ==> "meta"
   ==> "generateDocs"
   ==> "package"
   ==> "publish"
@@ -260,7 +263,7 @@ Target.create "ci" ignore
   <== [ "test" ]
 
 "release"
-  <== [ "meta"; "publish" ]
+  <== [ "publish" ]
 
 "ci"
   <== [ "package" ]

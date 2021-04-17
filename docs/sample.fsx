@@ -5,7 +5,7 @@
 #r "AAD.fs.tasks.dll"
 #r "Giraffe.dll"
 open System
-open FSharp.Control.Tasks
+open FSharp.Control.Tasks.V2.ContextInsensitive
 open Giraffe
 open AAD
 let httpClient = new Net.Http.HttpClient()

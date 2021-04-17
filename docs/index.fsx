@@ -45,13 +45,12 @@ The library is available under MIT license, which allows modification and
 redistribution for both commercial and non-commercial purposes. For more information see the 
 [License file][license] in the GitHub repository. 
 
-  [content]: https://github.com/Azure/DatatypeChannels.ASB/tree/master/docs/content
-  [gh]: https://github.com/Azure/DatatypeChannels.ASB
-  [issues]: https://github.com/Azure/DatatypeChannels.ASB/issues
-  [readme]: https://github.com/Azure/DatatypeChannels.ASB/blob/master/README.md
-  [license]: https://github.com/Azure/DatatypeChannels.ASB/blob/master/LICENSE.md
+  [content]: https://github.com/Azure/AAD.fs/tree/master/docs/content
+  [gh]: https://github.com/Azure/AAD.fs
+  [issues]: https://github.com/Azure/AAD.fs/issues
+  [readme]: https://github.com/Azure/AAD.fs/blob/master/README.md
+  [license]: https://github.com/Azure/AAD.fs/blob/master/LICENSE.md
 
-
-Copyright 2021 Microsoft
 *)
+
 
