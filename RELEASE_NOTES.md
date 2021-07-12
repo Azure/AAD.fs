@@ -1,3 +1,7 @@
+### 3.0.0
+
+* Breaking: dependencies bump and net5.0 target
+
 ### 2.0.0
 
 * Breaking API change: load OIDC configuration on demand and refresh every 24h 
