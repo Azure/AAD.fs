@@ -39,7 +39,7 @@ module Http =
     open System.Net
     open FSharp.Control.Tasks.V2.ContextInsensitive
     
-    let waitFor method period url =
+    let waitFor method (period:int) url =
         task {
             use client = new HttpClient()
             let rec poll sleep =

@@ -36,7 +36,7 @@ let oidcConfig =
 module Http =
     open System.Net
     
-    let waitFor method period url =
+    let waitFor method (period:int) url =
         async {
             use client = new HttpClient()
             let rec poll sleep =
