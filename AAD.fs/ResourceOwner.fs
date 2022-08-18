@@ -111,7 +111,7 @@ module ResourceOwner =
                     let validated = introspected |> Result.bind (validate demand)
 
                     let wwwAuthenticate err = 
-                            sprintf "Bearer realm=\"%s\", audience=\"%A\", error_description=\"%s\""
+                            sprintf "Bearer realm=\"%s\", audience=\"%s\", error_description=\"%s\""
                                     oidcConfig.Issuer
                                     (audiences |> Seq.map Audience.toString |> String.concat ",")
                                     err

@@ -36,7 +36,7 @@ module PartProtector =
 
         let mkDefault onSuccess =
             mkNew (fun _ (WWWAuthenticate authenticate) ->
-                        RequestErrors.FORBIDDEN "Missing required claims"
+                        RequestErrors.FORBIDDEN ""
                         >=> Writers.setHeader "WWW-Authenticate" authenticate)
                   onSuccess
 
