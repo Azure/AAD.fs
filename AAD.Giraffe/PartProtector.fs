@@ -38,7 +38,7 @@ module PartProtector =
         let mkDefault onSuccess =
             mkNew (fun _ (WWWAuthenticate authenticate) -> 
                         Writers.setWWWAuthenticate authenticate
-                        >=> Writers.forbidden "Missing required demand")
+                        >=> Writers.forbidden "")
                   onSuccess
 
     /// Creates PartProtector instance using the client credentials provided.
