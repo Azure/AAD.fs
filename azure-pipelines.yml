@@ -9,6 +9,11 @@ trigger:
         include:
         - master
         - refs/tags/*
+pr:
+    branches:
+        include:
+        - master
+
 steps:
     - task: UseDotNet@2
       inputs:
