@@ -12,7 +12,7 @@ trigger:
 steps:
     - task: UseDotNet@2
       inputs:
-        version: '5.0.100'
+        version: '6.0.100'
 
     - task: DotNetCoreCLI@2
       displayName: "Restore tools"
@@ -27,9 +27,9 @@ steps:
         NUGET_REPO_KEY: $(NUGET_REPO_KEY)
       inputs:
         command: custom
-        custom: fake
+        custom: fsi
         ${{ if startsWith(variables['Build.SourceBranch'], 'refs/tags') }}:
-            arguments: 'build -t release'
+            arguments: 'build.fsx -t release'
         ${{ if not(startsWith(variables['Build.SourceBranch'], 'refs/tags')) }}:
-            arguments: build -t ci
+            arguments: build.fsx -t ci
             

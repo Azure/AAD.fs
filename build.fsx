@@ -1,14 +1,11 @@
-#r "paket:
-nuget FSharp.Core ~> 4.7
-nuget Fake.DotNet.Cli
-nuget Fake.IO.FileSystem
-nuget Fake.Core.ReleaseNotes
-nuget Fake.Core.Target
-nuget Fake.Tools.Git //"
-#load "./.fake/build.fsx/intellisense.fsx"
-#if !FAKE
-  #r "Facades/netstandard"
-#endif
+#!/usr/bin/env -S dotnet fsi
+#r "nuget: Fake.Core.Target"
+#r "nuget: Fake.DotNet.Cli"
+#r "nuget: Fake.IO.FileSystem"
+#r "nuget: Fake.Core.ReleaseNotes"
+#r "nuget: Fake.Core.Target"
+#r "nuget: Fake.Tools.Git"
+#r "nuget: MSBuild.StructuredLogger, 2.1.820"
 
 open Fake.Core
 open Fake.Core.TargetOperators
@@ -31,6 +28,13 @@ let ver =
     match Environment.environVarOrNone "BUILD_NUMBER" with
     | Some n -> { release.SemVer with Patch = uint32 n; Original = None }
     | _ -> SemVer.parse "0.0.0"
+
+System.Environment.GetCommandLineArgs() 
+|> Array.skip 2 // fsi.exe; build.fsx
+|> Array.toList
+|> Context.FakeExecutionContext.Create false __SOURCE_FILE__
+|> Context.RuntimeContext.Fake
+|> Context.setExecutionContext
 
 [<AutoOpen>]
 module Shell =
