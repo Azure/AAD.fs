@@ -37,13 +37,12 @@ let oidcConfig =
 
 module Http =
     open System.Net
-    open FSharp.Control.Tasks.V2.ContextInsensitive
     
     let waitFor method (period:int) url =
-        task {
+        backgroundTask {
             use client = new HttpClient()
             let rec poll sleep =
-                task {
+                backgroundTask {
                     if sleep then do! Async.Sleep period
                     use request = new HttpRequestMessage(Method = HttpMethod(method),
                                                          RequestUri = Uri(url, UriKind.Absolute))

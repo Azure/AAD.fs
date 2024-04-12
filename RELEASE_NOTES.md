@@ -1,3 +1,7 @@
+### 5.0.0
+
+* Breaking: dependencies bump and net8.0 target
+
 ### 4.0.0
 
 * Breaking: dependencies bump and net6.0 target

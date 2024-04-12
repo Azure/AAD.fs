@@ -6,7 +6,6 @@ open System.Threading
 open System.Threading.Tasks
 open System.Net
 open Giraffe
-open FSharp.Control.Tasks.V2.ContextInsensitive
 open AAD
 open AADTests.TestsCommon
 
@@ -14,7 +13,7 @@ let rnd = Random()
 module Sample =
 
     let start (cts:CancellationTokenSource) httpClient audience authority =
-        task {
+        backgroundTask {
             let testPort = uint16 (rnd.Next(1,1000)+52767)
             let conf = (cts.Token,IPAddress.Loopback,testPort)
             

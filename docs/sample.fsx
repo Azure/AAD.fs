@@ -1,11 +1,10 @@
 (*** hide ***)
-#I "../AAD.tasks.Test/bin/Debug/net5.0"
+#I "../AAD.tasks.Test/bin/Debug/net8.0"
 #r "TaskBuilder.fs.dll"
 #r "AAD.Giraffe.dll"
 #r "AAD.fs.tasks.dll"
 #r "Giraffe.dll"
 open System
-open FSharp.Control.Tasks.V2.ContextInsensitive
 open Giraffe
 open AAD
 let httpClient = new Net.Http.HttpClient()
@@ -62,7 +61,7 @@ Complex demands can be expressed by combining the patterns with `Any` and `All`,
 The full source code for this sample is in `AAD.tasks.Test/ResourceServers.fs`, but here are the important ingredients:
 *)
 
-task {
+backgroundTask {
     let! protector : PartProtector = 
         PartProtector.mkDefault httpClient audience authority
         

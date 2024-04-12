@@ -56,11 +56,10 @@ module Shell =
         |> Map.ofSeq
 
 module Async =
-    let tuple cont comp =
+    let map cont a =
         async {
-            let! x = comp
-            let! y = cont
-            return x,y
+            let! a' = a
+            return! cont a'
         }
 
 module Graph =
@@ -120,9 +119,9 @@ Target.create "registerSample" (fun _ ->
         | x -> failwithf "Unexpected output:%A" x
     let parseTuple =
         parsePlain >> String.split '\n' >> List.filter String.isNotNullOrEmpty >> function
-        | [l1;l2] -> l1, l2 
+        | [l1;l2] -> l1, l2
         | x -> failwithf "Unexpected output:%A" x
-
+    let t3 a b c = a,b,c
     let tenantId = az "account show --query tenantId --output tsv" "." parsePlain
     let tenantName = az "rest --uri \"https://graph.microsoft.com/v1.0/organization\" --query \"value[].verifiedDomains[?isDefault] | [0][0].name\" --output tsv" "." parsePlain
     let rnd = Random().Next(1,1000)
@@ -135,18 +134,16 @@ Target.create "registerSample" (fun _ ->
             "AAD.Test"
             parseApp
     az (sprintf "ad app update --id %s --identifier-uris \"api://%s\"" appId appId) "." ignore
-    az (sprintf "ad sp create --id %s" appId) "." ignore
-    az (sprintf "ad sp update --id %s --add tags WindowsAzureActiveDirectoryIntegratedApp" appId) "." ignore
     let appSPId =
-        az (sprintf "ad sp show --id %s --query objectId --output tsv" appId) "." parsePlain
+        az (sprintf "ad sp create --id %s --query id --output tsv" appId) "." parsePlain
     // client principals
-    let (readerPwd,(readerId,readerAppId)),(writerPwd,(writerId,writerAppId)),(adminPwd,(adminId,adminAppId)) =
+    let (readerAppId,readerPwd,readerId),(writerAppId,writerPwd,writerId),(adminAppId,adminPwd,adminId) =
         [ sprintf "http://aad-sample-reader%d" rnd
           sprintf "http://aad-sample-writer%d" rnd
           sprintf "http://aad-sample-admin%d" rnd ]
         |> List.map (fun n ->
-            aza (sprintf "ad sp create-for-rbac -n \"%s\" --query password --output tsv" n) "." parsePlain
-            |> Async.tuple (aza (sprintf "ad sp show --id \"%s\" --query \"[objectId,appId]\" --output tsv" n) "." parseTuple))
+            aza (sprintf "ad sp create-for-rbac -n  \"%s\" --query \"[appId,password]\" --output tsv" n) "." parseTuple
+            |> Async.map (fun (appId,pwd) -> aza (sprintf "ad sp show --id %s --query id --output tsv" appId) "." (parsePlain >> t3 appId pwd)))
         |> Async.Parallel
         |> Async.RunSynchronously
         |> function [|r1; r2; r3|] -> r1, r2, r3 | _ -> failwith "Arity mismatch"

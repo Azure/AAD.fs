@@ -3,7 +3,6 @@ module AADTests.Logging
 open System.Threading
 open System.Threading.Tasks
 open System.Net.Http
-open FSharp.Control.Tasks
 
 type Log = string -> (string*obj) list -> unit
 
@@ -12,7 +11,7 @@ type HttpClientLogger(innerHandler, log:Log) =
     member private __.baseImpl (request, cancellationToken) = base.SendAsync (request, cancellationToken)
     override this.SendAsync(request:HttpRequestMessage, cancellationToken:CancellationToken):Task<HttpResponseMessage> =
         
-        task {
+        backgroundTask {
             if isNull request.Content then
                 log "Request: {req}" ["req", box request]
             else

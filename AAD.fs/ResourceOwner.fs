@@ -8,12 +8,11 @@ open System.IdentityModel.Tokens.Jwt
 module internal TokenCache =
     open System.Threading.Tasks
     open Microsoft.Extensions.Caching.Memory
-    open FSharp.Control.Tasks
 
     let mkNew options =
         let cache = new MemoryCache(options)
         let getOrAdd key (mkEntry: string -> Task<Result<JwtSecurityToken,_>>) =
-            cache.GetOrCreateAsync(key, fun e -> task {
+            cache.GetOrCreateAsync(key, fun e -> backgroundTask {
                 let! r = mkEntry key
                 match r with
                 | Ok entry ->
@@ -37,7 +36,6 @@ module internal Introspector =
     open YoLo
     open Microsoft.IdentityModel.Tokens
     open Microsoft.IdentityModel.Protocols.OpenIdConnect
-    open FSharp.Control.Tasks.V2.ContextInsensitive
 
     let mkNew (cache:string -> (string -> Task<_>) -> Task<_>)
               (audiences: #seq<Audience>)
@@ -45,7 +43,7 @@ module internal Introspector =
         let handler = JwtSecurityTokenHandler()
 
         let local (jwtEncodedString: string) =
-            task {
+            backgroundTask {
                 try
                     let! oidcConfig = getConfig()
                     let vparams = TokenValidationParameters
