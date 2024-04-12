@@ -3,7 +3,6 @@ namespace AAD
 open Microsoft.AspNetCore.Http
 open System.Threading.Tasks
 open Giraffe
-open FSharp.Control.Tasks.V2.ContextInsensitive
 open System.IdentityModel.Tokens.Jwt
 open Microsoft.IdentityModel.Protocols.OpenIdConnect
 open Microsoft.Extensions.Caching.Memory
@@ -53,7 +52,7 @@ module PartProtector =
             member __.Verify (getDemand: HttpContext -> Task<Demand>) 
                              (onSuccess: JwtSecurityToken -> HttpHandler) = 
                 fun next (ctx:HttpContext) -> 
-                    task {
+                    backgroundTask {
                         let handleSuccess,handleMissing,result =
                             ResultHandler.mkDefault onSuccess
                         let! demand = getDemand ctx
@@ -67,7 +66,7 @@ module PartProtector =
                                  (onSuccess: JwtSecurityToken -> HttpHandler)
                                  (onError: JwtSecurityToken option -> WWWAuthenticate -> HttpHandler) = 
                 fun next (ctx:HttpContext) -> 
-                    task {
+                    backgroundTask {
                         let handleSuccess,handleMissing,result =
                             ResultHandler.mkNew onError onSuccess
                         let! demand = getDemand ctx
@@ -84,10 +83,10 @@ module PartProtector =
     let mkDefault (httpClient: HttpClient)
                   (audiences: #seq<Audience>)
                   (authority: System.Uri) =
-        task {
+        backgroundTask {
             let getConfiguration =
                 let cache = new MemoryCache(new MemoryCacheOptions(SizeLimit = 1L)) 
-                fun () -> cache.GetOrCreateAsync(1, fun e -> task {
+                fun () -> cache.GetOrCreateAsync(1, fun e -> backgroundTask {
                     let! r = OpenIdConnectConfigurationRetriever
                                 .GetAsync(sprintf "%O/.well-known/openid-configuration" authority, httpClient, System.Threading.CancellationToken.None)
                                 .ConfigureAwait false

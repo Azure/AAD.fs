@@ -5,7 +5,6 @@ open Suave.Operators
 open System.IdentityModel.Tokens.Jwt
 open Microsoft.IdentityModel.Protocols.OpenIdConnect
 open Microsoft.Extensions.Caching.Memory
-open FSharp.Control.Tasks.V2.ContextInsensitive
 
 /// PartProtector is the interface for a stateful protector instance.
 /// Use PartProtector module to create the instances implementing this interface.
@@ -86,7 +85,7 @@ module PartProtector =
             let getConfiguration =
                 let cache = new MemoryCache(new MemoryCacheOptions(SizeLimit = 1L)) 
                 fun () -> 
-                    cache.GetOrCreateAsync(1, fun e -> task {
+                    cache.GetOrCreateAsync(1, fun e -> backgroundTask {
                         let! r = OpenIdConnectConfigurationRetriever
                                     .GetAsync(sprintf "%O/.well-known/openid-configuration" authority, httpClient, System.Threading.CancellationToken.None)
                                     .ConfigureAwait false

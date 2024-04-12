@@ -3,7 +3,6 @@ namespace AADTests
 open System
 open System.Threading.Tasks
 open System.Net.Http
-open FSharp.Control.Tasks
 open AAD
 open Microsoft.Identity.Client
 
@@ -26,7 +25,7 @@ module ResourceProxy =
             member __.httpClient = httpClient
             member __.address = address
             member __.provision() = 
-                task {
+                backgroundTask {
                     use r = new HttpRequestMessage(Method = HttpMethod.Head,
                                                    RequestUri = address)
                     withHeaders r.Headers
@@ -35,7 +34,7 @@ module ResourceProxy =
                         raise (ProxyException response.StatusCode)
                 } :> Task
             member __.read() = 
-                task {
+                backgroundTask {
                     use r = new HttpRequestMessage(Method = HttpMethod.Get,
                                                    RequestUri = address)
                     withHeaders r.Headers
@@ -46,7 +45,7 @@ module ResourceProxy =
                     return content
                 }
             member __.write() = 
-                task {
+                backgroundTask {
                     use r = new HttpRequestMessage(Method = HttpMethod.Put,
                                                    RequestUri = address)
                     withHeaders r.Headers

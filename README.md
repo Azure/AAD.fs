@@ -17,16 +17,16 @@ The library ships as following packages:
 - Use `Noop.PartProtector` to bypass the verification of demands (for example to implement feature switch)
 
 ##### For requesting party
-- Use `AsyncRequestor` or `TaskRequestor` from AAD.fs package or [MSAL](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet) library directly
+- Use `AsyncRequestor` or `TaskRequestor` from AAD.fs package or [Identity platform SDK](https://learn.microsoft.com/en-us/entra/identity-platform/v2-overview) library directly.
 
 #### Building
 
 ##### Prerequisites
-The build requires at least .NET Core SDK 5 installed.
+The build requires at least .NET Core SDK 8 installed.
 When building for the first time restore the local tools, in this directory run:
 
-* `dotnet tool restore` to install [FAKE](https://fake.build/fake-gettingstarted.html), then
-* `dotnet fake build` or try `fake build --list` to see the available targets.
+* `dotnet tool restore`, then
+* `dotnet fsi build.fsx` or try `./build.fsx --list` to see the available targets.
 
 #### Test scenario
 The test scenario implements authorization using [Azure Application Roles](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-add-app-roles-in-azure-ad-apps). The sample application can be found in your Azure Active Directory once provisioned:
@@ -35,11 +35,12 @@ The test scenario implements authorization using [Azure Application Roles](https
 
 ##### Running integration tests
 * Make sure you are logged in: `az login`
-* Only once: Register the application and service principals: `dotnet fake build -t registerSample`
-* `dotnet fake build -t integration`
+* Only once: Register the application and service principals: `dotnet fsi build.fsx -t registerSample`
+* `dotnet fsi build.fsx -t integration`
+> The build script is implemented using [FAKE](https://fake.build/fake-gettingstarted.html).
 
 The registrated application and principals are kept in your Azure subscription and information about them - in your `dotnet user-secrets`, 
-when you no longer need them, you can delete them with `dotnet fake build -t unregisterSample`.
+when you no longer need them, you can delete them with `dotnet fsi build.fsx -t unregisterSample`.
 
 > Note: 
 > Integration tests demonstrate a couple approaches in requestor error handling:

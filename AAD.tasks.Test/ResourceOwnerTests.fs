@@ -5,7 +5,6 @@ open System.Threading
 open System.Threading.Tasks
 open Xunit
 open Swensen.Unquote
-open FSharp.Control.Tasks.V2.ContextInsensitive
 open AAD
 open AADTests.TestsCommon
     
@@ -14,7 +13,7 @@ open AADTests.TestsCommon
 type Parties() =
     let mutable last = None
     let init httpClient =
-        task {
+        backgroundTask {
             match last with
             | Some args -> return args
             | _ ->
@@ -47,7 +46,7 @@ type ThreeBodyProblem(output: Xunit.Abstractions.ITestOutputHelper, fixture: Par
 
     [<Fact>]
     member __.``Admin can write and read`` () =
-        task {
+        backgroundTask {
           let _, proxy = fixture.Init httpClient
           let requestor = 
             proxy |> TaskRequestor.mkNew (ResourceProxy.authenticate ([settings.Scope], ClientId settings.AdminAppId, Secret settings.AdminSecret, settings.Authority))
@@ -59,7 +58,7 @@ type ThreeBodyProblem(output: Xunit.Abstractions.ITestOutputHelper, fixture: Par
 
     [<Fact>]
     member __.``Writer can write but not read`` () =
-        task {
+        backgroundTask {
           let _, proxy = fixture.Init httpClient
           let requestor = 
             proxy |> TaskRequestor.mkNew (ResourceProxy.authenticate ([settings.Scope], ClientId settings.WriterAppId, Secret settings.WriterSecret, settings.Authority))
@@ -74,7 +73,7 @@ type ThreeBodyProblem(output: Xunit.Abstractions.ITestOutputHelper, fixture: Par
 
     [<Fact>]
     member __.``Reader can read`` () =
-        task {
+        backgroundTask {
           let _, proxy = fixture.Init httpClient
           let requestor = 
             proxy |> TaskRequestor.mkNew (ResourceProxy.authenticate ([settings.Scope], ClientId settings.ReaderAppId, Secret settings.ReaderSecret, settings.Authority))
@@ -84,7 +83,7 @@ type ThreeBodyProblem(output: Xunit.Abstractions.ITestOutputHelper, fixture: Par
 
     [<Fact>]
     member __.``Forbidden`` () =
-        task {
+        backgroundTask {
           let _, proxy = fixture.Init httpClient
           let! response = proxy.provision() // should always succeed
 

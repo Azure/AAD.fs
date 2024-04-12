@@ -6,8 +6,7 @@ open System
 module internal AwaitableBuilder =
     open System.Threading.Tasks
 #if TASKS
-    open FSharp.Control.Tasks
-    let awaitable = task
+    let awaitable = backgroundTask
     type Awaitable<'r> = Task<'r>
 
     [<RequireQualifiedAccess>]
@@ -16,8 +15,8 @@ module internal AwaitableBuilder =
         let inline awaitTask x = x
         let inline awaitUnitTask (x:Task) = x.ContinueWith<unit>(fun _ -> ())
         let inline awaitAsync x = Async.StartAsTask x
-        let inline map f (x:Task<_>) = task { let! v = x in return f v }
-        let inline bind f (x:Task<_>) = task { let! v = x in return! f v }
+        let inline map f (x:Task<_>) = backgroundTask { let! v = x in return f v }
+        let inline bind f (x:Task<_>) = backgroundTask { let! v = x in return! f v }
         let inline whenAll (xs:#seq<Task<'t>>) = Task.WhenAll<'t> (Array.ofSeq xs)
 #else
     let awaitable = async
