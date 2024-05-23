@@ -9,15 +9,15 @@ open Microsoft.Extensions.Caching.Memory
 
 /// PartProtector is the interface for a stateful protector instance.
 /// Use PartProtector module to create the instances implementing this interface.
-type PartProtector =
+type PartProtector<'token> =
     /// Wraps the verify call                
     abstract Verify: getDemand: (HttpContext -> Task<Demand>) -> 
-                     onSuccess: (JwtSecurityToken -> HttpHandler) -> 
+                     onSuccess: ('token -> HttpHandler) -> 
                      HttpHandler
     /// Handling both success and error outcomes
     abstract VerifyWith: getDemand: (HttpContext -> Task<Demand>) -> 
-                         onSuccess: (JwtSecurityToken -> HttpHandler) -> 
-                         onError: (JwtSecurityToken option -> WWWAuthenticate -> HttpHandler) -> 
+                         onSuccess: ('token -> HttpHandler) -> 
+                         onError: ('token option -> WWWAuthenticate -> HttpHandler) -> 
                          HttpHandler
 
 /// PartProtector module for working with stateful instances of PartProtector interface.
@@ -41,16 +41,14 @@ module PartProtector =
                   onSuccess
 
     /// Creates PartProtector instance using the client credentials provided.
-    let mkNew (introspect: TokenString -> Task<Result<JwtSecurityToken,string>>)
-              (validate: Demand -> JwtSecurityToken -> Result<JwtSecurityToken,string>)
-              (audiences: #seq<Audience>)
-              (getConfig: unit -> Task<OpenIdConnectConfiguration>) =
+    let mkNew (introspect: TokenString -> Task<Result<'token,string>>)
+              (validate: Demand -> 'token -> Result<'token,string>) =
         let resourceOwner =
-            ResourceOwner.mkNew introspect validate audiences getConfig
+            ResourceOwner.mkNew introspect validate
                                                       
-        { new PartProtector with 
-            member __.Verify (getDemand: HttpContext -> Task<Demand>) 
-                             (onSuccess: JwtSecurityToken -> HttpHandler) = 
+        { new PartProtector<'token> with 
+            member _.Verify (getDemand: HttpContext -> Task<Demand>) 
+                            (onSuccess: 'token -> HttpHandler) = 
                 fun next (ctx:HttpContext) -> 
                     backgroundTask {
                         let handleSuccess,handleMissing,result =
@@ -62,9 +60,9 @@ module PartProtector =
                                                    (Readers.bearerTokenString ctx)
                         return! result next ctx
                     }
-            member __.VerifyWith (getDemand: HttpContext -> Task<Demand>) 
-                                 (onSuccess: JwtSecurityToken -> HttpHandler)
-                                 (onError: JwtSecurityToken option -> WWWAuthenticate -> HttpHandler) = 
+            member _.VerifyWith (getDemand: HttpContext -> Task<Demand>) 
+                                (onSuccess: 'token -> HttpHandler)
+                                (onError: 'token option -> WWWAuthenticate -> HttpHandler) = 
                 fun next (ctx:HttpContext) -> 
                     backgroundTask {
                         let handleSuccess,handleMissing,result =
@@ -97,15 +95,16 @@ module PartProtector =
         
             let! _ = getConfiguration() // prime the config cache
             let introspect = 
-                (TokenCache.mkDefault(), audiences, getConfiguration) |||> Introspector.mkNew 
-            let project claim =
-                seq {
-                    yield! ResourceOwner.ClaimProjection.ofAppRole claim
-                    yield! ResourceOwner.ClaimProjection.ofRole claim
-                    yield! ResourceOwner.ClaimProjection.ofScope claim
-                }
+                (TokenCache.mkDefault(), audiences) ||> JwtSecurityTokenIntrospector.mkNew getConfiguration
+            let project (token: JwtSecurityToken) =
+                token.Claims
+                |> Seq.collect (fun claim ->
+                    seq {
+                        yield! ResourceOwner.ClaimProjection.ofAppRole claim
+                        yield! ResourceOwner.ClaimProjection.ofRole claim
+                        yield! ResourceOwner.ClaimProjection.ofScope claim
+                    }
+                )
             return mkNew introspect
                          (ResourceOwner.validate '/' project) 
-                         audiences
-                         getConfiguration
         }

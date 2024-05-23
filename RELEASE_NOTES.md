@@ -1,3 +1,7 @@
+### 6.0.0
+
+* Breaking: Generalized certain abstractions to make token validation fully pluggable.
+
 ### 5.0.0
 
 * Breaking: dependencies bump and net8.0 target
