@@ -8,15 +8,15 @@ open Microsoft.Extensions.Caching.Memory
 
 /// PartProtector is the interface for a stateful protector instance.
 /// Use PartProtector module to create the instances implementing this interface.
-type PartProtector =
+type PartProtector<'token> =
     /// Wraps the verify call                
     abstract Verify: getDemand: (HttpContext -> Async<Demand>) -> 
-                     onSuccess: (JwtSecurityToken -> WebPart) ->
+                     onSuccess: ('token -> WebPart) ->
                      WebPart
     /// Handling both success and error outcomes
     abstract VerifyWith: getDemand: (HttpContext -> Async<Demand>) -> 
-                         onSuccess: (JwtSecurityToken -> WebPart) ->
-                         onError: (JwtSecurityToken option -> WWWAuthenticate -> WebPart) ->
+                         onSuccess: ('token -> WebPart) ->
+                         onError: ('token option -> WWWAuthenticate -> WebPart) ->
                          WebPart
 
 /// PartProtector module for working with stateful instances of PartProtector interface.
@@ -40,16 +40,14 @@ module PartProtector =
                   onSuccess
 
     /// Creates PartProtector instance using the client credentials provided.
-    let mkNew (introspect: TokenString -> Async<Result<JwtSecurityToken,string>>)
-              (validate: Demand -> JwtSecurityToken -> Result<JwtSecurityToken,string>)
-              (audiences: #seq<Audience>)
-              (getConfig: unit -> Async<OpenIdConnectConfiguration>) =
+    let mkNew (introspect: TokenString -> Async<Result<'token,string>>)
+              (validate: Demand -> 'token -> Result<'token,string>) =
         let resourceOwner =
-            ResourceOwner.mkNew introspect validate audiences getConfig
+            ResourceOwner.mkNew introspect validate
                                                       
-        { new PartProtector with 
+        { new PartProtector<'token> with 
             member __.Verify (getDemand: HttpContext -> Async<Demand>) 
-                             (onSuccess: JwtSecurityToken -> WebPart) = 
+                             (onSuccess: 'token -> WebPart) = 
                 fun (ctx:HttpContext) ->
                     async {
                         let handleSuccess,handleMissing,result =
@@ -62,8 +60,8 @@ module PartProtector =
                         return! result ctx
                     }
             member __.VerifyWith (getDemand: HttpContext -> Async<Demand>) 
-                                 (onSuccess: JwtSecurityToken -> WebPart)
-                                 (onError: JwtSecurityToken option -> WWWAuthenticate -> WebPart) = 
+                                 (onSuccess: 'token -> WebPart)
+                                 (onError: 'token option -> WWWAuthenticate -> WebPart) = 
                 fun (ctx:HttpContext) ->
                     async {
                         let handleSuccess,handleMissing,result =
@@ -96,15 +94,16 @@ module PartProtector =
         
             let! _ = getConfiguration() // prime the config cache
             let introspect = 
-                (TokenCache.mkDefault(), audiences, getConfiguration) |||> Introspector.mkNew 
-            let project claim =
-                seq {
-                    yield! ResourceOwner.ClaimProjection.ofAppRole claim
-                    yield! ResourceOwner.ClaimProjection.ofRole claim
-                    yield! ResourceOwner.ClaimProjection.ofScope claim
-                }
+                (TokenCache.mkDefault(), audiences) ||> JwtSecurityTokenIntrospector.mkNew getConfiguration
+            let project (token: JwtSecurityToken) =
+                token.Claims
+                |> Seq.collect (fun claim ->
+                    seq {
+                        yield! ResourceOwner.ClaimProjection.ofAppRole claim
+                        yield! ResourceOwner.ClaimProjection.ofRole claim
+                        yield! ResourceOwner.ClaimProjection.ofScope claim
+                    }
+                )
             return mkNew introspect
                          (ResourceOwner.validate '/' project) 
-                         audiences
-                         getConfiguration
         }

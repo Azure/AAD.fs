@@ -16,8 +16,8 @@ module Internals =
     module Introspection =
         let audience = ".default"
         let introspect = 
-              (TokenCache.mkDefault(), [Audience audience], fun _ -> Async.result oidcConfig)
-              |||> Introspector.mkNew 
+              ((fun _ -> Async.result oidcConfig), TokenCache.mkDefault(), [Audience audience])
+              |||> JwtSecurityTokenIntrospector.mkNew 
         
         [<Fact>]
         let Introspects () =
@@ -79,12 +79,15 @@ module Internals =
             } |> Async.RunSynchronously
             
     module Validation =
+        let ofToken p (t: JwtSecurityToken) =
+            t.Claims |> Seq.collect p
+
         [<Fact>]
         let ``Role demand satisfied`` () =
             let token = Introspection.Introspects()
             let result =
                 token 
-                |> Result.bind (ResourceOwner.validate '/' ResourceOwner.ClaimProjection.ofRole (Pattern ["Test"; "read"; "A"]))
+                |> Result.bind (ResourceOwner.validate '/' (ofToken ResourceOwner.ClaimProjection.ofRole) (Pattern ["Test"; "read"; "A"]))
             true =! Result.isOk result
             
         [<Fact>]
@@ -92,7 +95,7 @@ module Internals =
             let token = Introspection.Introspects()
             let result =
                 token 
-                |> Result.bind (ResourceOwner.validate '/' ResourceOwner.ClaimProjection.ofScope (Pattern ["Test"; "read"; "A"]))
+                |> Result.bind (ResourceOwner.validate '/' (ofToken ResourceOwner.ClaimProjection.ofScope) (Pattern ["Test"; "read"; "A"]))
             true =! Result.isError result
             
         [<Fact>]
@@ -100,7 +103,7 @@ module Internals =
             let claims = Seq.singleton (Claim("scp", "Test.read.A Test.write.B"))
             let token = JwtSecurityToken(claims = claims)
             let result =
-                ResourceOwner.validate '.' ResourceOwner.ClaimProjection.ofScope (Pattern ["Test"; "read"; "A"]) token
+                ResourceOwner.validate '.' (ofToken ResourceOwner.ClaimProjection.ofScope) (Pattern ["Test"; "read"; "A"]) token
             true =! Result.isOk result
             
         [<Fact>]
@@ -108,7 +111,7 @@ module Internals =
             let claims = [ Claim("roles", "Test/read/A"); Claim("roles", "Test/write/B") ]
             let token = JwtSecurityToken(claims = claims)
             let result =
-                ResourceOwner.validate '/' ResourceOwner.ClaimProjection.ofAppRole (Pattern ["Test"; "read"; "A"]) token
+                ResourceOwner.validate '/' (ofToken ResourceOwner.ClaimProjection.ofAppRole) (Pattern ["Test"; "read"; "A"]) token
             true =! Result.isOk result
 
 

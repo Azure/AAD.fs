@@ -31,21 +31,23 @@ module internal TokenCache =
 
 
 [<RequireQualifiedAccess>]
-module internal Introspector =
+module internal JwtSecurityTokenIntrospector =
     open System.Threading.Tasks
     open YoLo
     open Microsoft.IdentityModel.Tokens
     open Microsoft.IdentityModel.Protocols.OpenIdConnect
 
-    let mkNew (cache:string -> (string -> Task<_>) -> Task<_>)
-              (audiences: #seq<Audience>)
-              (getConfig: unit -> Awaitable<OpenIdConnectConfiguration>) = 
+    let mkNew (getConfig: unit -> Awaitable<OpenIdConnectConfiguration>)
+              (cache:string -> (string -> Task<_>) -> Task<_>)
+              (audiences: #seq<Audience>) = 
         let handler = JwtSecurityTokenHandler()
 
         let local (jwtEncodedString: string) =
             backgroundTask {
+                let mutable issuer = None
                 try
                     let! oidcConfig = getConfig()
+                    issuer <- Some oidcConfig.Issuer
                     let vparams = TokenValidationParameters
                                     (ValidIssuer = oidcConfig.Issuer,
                                      ValidAudiences = Seq.map Audience.toString audiences,
@@ -53,7 +55,15 @@ module internal Introspector =
                     let _,token = handler.ValidateToken(jwtEncodedString,vparams)
                     return Ok (token :?> JwtSecurityToken)
                 with err ->
-                    return Error err.Message
+                    let wwwAuthenticate = 
+                        match issuer with
+                        | Some issuer ->
+                            sprintf "Bearer realm=\"%s\", audience=\"%s\", error_description=\"%s\""
+                                    issuer
+                                    (audiences |> Seq.map Audience.toString |> String.concat ",")
+                                    err.Message
+                        | _ -> sprintf "Bearer error_description=\"Unable to retrieve OIDC configuration: %s\"" err.Message
+                    return Error wwwAuthenticate
             }
                 
         let parse s =
@@ -69,16 +79,15 @@ module internal Introspector =
                 return r
             }
 
-type ResourceOwner =
+type ResourceOwner<'token> =
     abstract Validate : demand: Demand -> 
-                        onSuccess: (JwtSecurityToken -> unit) -> 
-                        onUnauthorized: (JwtSecurityToken option -> WWWAuthenticate -> unit) -> 
+                        onSuccess: ('token -> unit) -> 
+                        onUnauthorized: ('token option -> WWWAuthenticate -> unit) -> 
                         tokenString: TokenString -> 
                         Awaitable<unit>
 
 [<RequireQualifiedAccess>]
 module ResourceOwner =
-    open Microsoft.IdentityModel.Protocols.OpenIdConnect
     open System.Security.Claims
     
     module ClaimProjection = 
@@ -94,38 +103,29 @@ module ResourceOwner =
             if claim.Type = "roles" then Seq.singleton claim.Value
             else Seq.empty
 
-    let mkNew (introspect: TokenString -> Awaitable<Result<JwtSecurityToken,string>>)
-              (validate: Demand -> JwtSecurityToken -> Result<JwtSecurityToken,string>)
-              (audiences: #seq<Audience>)
-              (getConfig: unit -> Awaitable<OpenIdConnectConfiguration>) =
-        { new ResourceOwner with
+    let mkNew (introspect: TokenString -> Awaitable<Result<'token,string>>)
+              (validate: Demand -> 'token -> Result<'token,string>) =
+        { new ResourceOwner<'token> with
             member __.Validate (demand: Demand)
-                               (onSuccess: JwtSecurityToken -> unit)
-                               (onUnauthorized: JwtSecurityToken option -> WWWAuthenticate -> unit)
+                               (onSuccess: 'token -> unit)
+                               (onUnauthorized: 'token option -> WWWAuthenticate -> unit)
                                (tokenString: TokenString) =
                 awaitable {
-                    let! oidcConfig = getConfig()
                     let! introspected = introspect tokenString
                     let validated = introspected |> Result.bind (validate demand)
 
-                    let wwwAuthenticate err = 
-                            sprintf "Bearer realm=\"%s\", audience=\"%s\", error_description=\"%s\""
-                                    oidcConfig.Issuer
-                                    (audiences |> Seq.map Audience.toString |> String.concat ",")
-                                    err
                     match validated, introspected with
                     | Ok t,_ -> onSuccess t
                     | Error err, Ok t -> 
-                        onUnauthorized (Some t) (wwwAuthenticate err |> WWWAuthenticate)
+                        onUnauthorized (Some t) (WWWAuthenticate err)
                     | Error err, _ -> 
-                        onUnauthorized None (wwwAuthenticate err |> WWWAuthenticate)
+                        onUnauthorized None (WWWAuthenticate err)
                 }
         }
 
-    let validate (splitChar: char) (claimsProjection: Claim -> #seq<string>) (demand: Demand) (t: JwtSecurityToken) = 
+    let validate (splitChar: char) (claimsProjection: 'token -> #seq<string>) (demand: Demand) (t: 'token) = 
         let claims =
-            t.Claims
-            |> Seq.collect claimsProjection
+            claimsProjection t
             |> Seq.map (String.split splitChar)
         demand
         |> Demand.eval claims  
