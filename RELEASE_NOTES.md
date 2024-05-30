@@ -1,3 +1,6 @@
+### 6.1.0
+* Reintroduce net6.0 target while keeping net8.0
+
 ### 6.0.0
 
 * Breaking: Generalized certain abstractions to make token validation fully pluggable.
