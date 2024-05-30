@@ -104,7 +104,7 @@ Target.create "restore" (fun _ ->
 
 Target.create "build" (fun _ ->
     let args = sprintf "/p:Version=%s --no-restore" ver.AsString
-    DotNet.publish (fun a -> a.WithCommon (fun c -> { c with CustomParams = Some args})) "."
+    DotNet.build (fun a -> a.WithCommon (fun c -> { c with CustomParams = Some args})) "."
 )
 
 Target.create "test" (fun _ ->
