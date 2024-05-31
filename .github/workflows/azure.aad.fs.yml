@@ -8,10 +8,9 @@ on:
     branches:
     - master
 env:
-  BUILD_NUMBER: "$[counter('buildCounter',1)]"
+  BUILD_NUMBER: "${{ github.run_number }}"
 jobs:
   build:
-    needs: build
     runs-on: ubuntu-latest
     steps:
     - name: checkout
@@ -27,6 +26,6 @@ jobs:
     - name: Build and publish
       env:
         NUGET_REPO_KEY: "${{ secrets.NUGET_REPO_KEY }}"
-        NUGET_REPO_URL: "${{ variables.NUGET_REPO_URL }}"
+        NUGET_REPO_URL: "${{ vars.NUGET_REPO_URL }}"
       run: dotnet fsi build.fsx -t release
       if: ${{ startsWith(github.ref, 'refs/tags') }}
