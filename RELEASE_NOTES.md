@@ -1,3 +1,6 @@
+### 6.2.0
+* Resetting the build/revision counter
+
 ### 6.1.0
 * Reintroduce net6.0 target while keeping net8.0
 
