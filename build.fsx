@@ -5,7 +5,7 @@
 #r "nuget: Fake.Core.ReleaseNotes"
 #r "nuget: Fake.Core.Target"
 #r "nuget: Fake.Tools.Git"
-#r "nuget: MSBuild.StructuredLogger, 2.1.820"
+#r "nuget: MSBuild.StructuredLogger, 2.2.243"
 
 open Fake.Core
 open Fake.Core.TargetOperators
@@ -238,7 +238,7 @@ Target.create "releaseDocs" (fun _ ->
     let tempDocsDir = "tmp/gh-pages"
     Shell.cleanDir tempDocsDir
     Git.Repository.cloneSingleBranch "" gitRepo "gh-pages" tempDocsDir
-    Git.Repository.fullclean tempDocsDir
+    Git.Repository.fullClean tempDocsDir
     Shell.copyRecursive "output" tempDocsDir true |> Trace.tracefn "%A"
     Git.Staging.stageAll tempDocsDir
     Git.Commit.exec tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
