@@ -1,6 +1,6 @@
 ## F# Web API endpoint protection using Azure AD roles
 
-[![Build Status](https://dev.azure.com/azure-fsharp-libs/public/_apis/build/status/Azure.AAD.fs?branchName=master)](https://dev.azure.com/azure-fsharp-libs/public/_build/latest?definitionId=1&branchName=master)
+[![Build](https://github.com/Azure/AAD.fs/actions/workflows/azure.aad.fs.yml/badge.svg)](https://github.com/Azure/AAD.fs/actions/workflows/azure.aad.fs.yml)
 [![NuGet](https://img.shields.io/nuget/v/AAD.fs.svg?style=flat)](https://www.nuget.org/packages/AAD.fs/)
 
 #### Consuming the library
