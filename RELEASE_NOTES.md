@@ -1,3 +1,6 @@
+### 7.0.0
+* Breaking: dependencies bump, drop net6.0, add net10.0 target
+
 ### 6.2.0
 * Resetting the build/revision counter
 
