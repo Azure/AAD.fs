@@ -45,7 +45,11 @@ module Shell =
         |> CreateProcess.ensureExitCode
         |> CreateProcess.map parse
         |> Proc.run
-    let inline az arg = sh "az" arg
+    let private azCommand =
+        if OperatingSystem.IsWindows() then "cmd.exe" else "az"
+    let private azArgs args =
+        if OperatingSystem.IsWindows() then $"/c az.cmd {args}" else args
+    let az arg = sh azCommand (azArgs arg)
     let aza args cwd parse =
         async { return az args cwd parse }
     let parsePlain r = String.trimChars [|' '; '\n'|] r.Result.Output
