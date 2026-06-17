@@ -3,7 +3,8 @@ on:
   push:
     branches:
     - master
-    - "refs/tags/*"
+    tags:
+    - '*'
   pull_request_target:
     branches:
     - master
