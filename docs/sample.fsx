@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../AAD.tasks.Test/bin/Debug/net8.0"
+#I "../AAD.tasks.Test/bin/Debug/net10.0"
 #r "TaskBuilder.fs.dll"
 #r "AAD.Giraffe.dll"
 #r "AAD.fs.tasks.dll"
