@@ -37,5 +37,12 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         VERSION="${{ github.ref_name }}"
-        NOTES=$(awk -v ver="$VERSION" '$0 == "### " ver {found=1; next} found && /^### /{exit} found{print}' RELEASE_NOTES.md)
-        gh release create "$VERSION" --title "$VERSION" --notes "$NOTES"
+        if [ -f RELEASE_NOTES.md ]; then
+          NOTES=$(awk -v ver="$VERSION" '$0 == "### " ver {found=1; next} found && /^### /{exit} found{print}' RELEASE_NOTES.md)
+        fi
+        NOTES="${NOTES:-Release $VERSION}"
+        if gh release view "$VERSION" &>/dev/null; then
+          echo "Release $VERSION already exists, skipping"
+        else
+          gh release create "$VERSION" --title "$VERSION" --notes "$NOTES"
+        fi
