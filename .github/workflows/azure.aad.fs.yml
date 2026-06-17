@@ -31,3 +31,11 @@ jobs:
         NUGET_REPO_URL: "${{ vars.NUGET_REPO_URL }}"
       run: dotnet fsi build.fsx -t release
       if: ${{ startsWith(github.ref, 'refs/tags') }}
+    - name: Create GitHub Release
+      if: ${{ startsWith(github.ref, 'refs/tags') }}
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        VERSION="${{ github.ref_name }}"
+        NOTES=$(awk -v ver="$VERSION" '$0 == "### " ver {found=1; next} found && /^### /{exit} found{print}' RELEASE_NOTES.md)
+        gh release create "$VERSION" --title "$VERSION" --notes "$NOTES"
