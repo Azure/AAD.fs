@@ -22,8 +22,9 @@ jobs:
     - name: NuGet login (OIDC → temp API key)
       uses: NuGet/login@v1
       id: login
+      if: ${{ startsWith(github.ref, 'refs/tags') }}
       with:
-          user: azure-fsharp-libs
+          user: ${{ secrets.NUGET_USER }}
     - name: checkout
       uses: actions/checkout@v4.1.0
     - uses: actions/setup-dotnet@v4.0.0
