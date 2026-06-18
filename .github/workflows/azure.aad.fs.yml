@@ -11,10 +11,18 @@ env:
   BUILD_NUMBER: "${{ github.run_number }}"
 jobs:
   build:
+    permissions:
+      id-token: write  # enable GitHub OIDC token issuance for this job
+    
     runs-on: ubuntu-latest
     environment: 
       name: build
     steps:
+    - name: NuGet login (OIDC → temp API key)
+      uses: NuGet/login@v1
+      id: login
+      with:
+          user: azure-fsharp-libs
     - name: checkout
       uses: actions/checkout@v4.1.0
     - uses: actions/setup-dotnet@v4.0.0
@@ -27,7 +35,7 @@ jobs:
       if: ${{ !startsWith(github.ref, 'refs/tags') }}
     - name: Build and publish
       env:
-        NUGET_REPO_KEY: "${{ secrets.NUGET_REPO_KEY }}"
+        NUGET_REPO_KEY: "${{steps.login.outputs.NUGET_API_KEY}}"
         NUGET_REPO_URL: "${{ vars.NUGET_REPO_URL }}"
       run: dotnet fsi build.fsx -t release
       if: ${{ startsWith(github.ref, 'refs/tags') }}
